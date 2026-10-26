@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Bad Request — 400{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 580px; margin: 3rem auto; text-align: center; padding: 3rem 2rem;">
+  <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛡️</div>
+  <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--warning); margin-bottom: 0.5rem;">400 Bad Request</h1>
+  <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+    {{ description or "The request was rejected due to an invalid or missing security verification token (CSRF). Please refresh and resubmit." }}
+  </p>
+  <div style="display: flex; justify-content: center; gap: 1rem;">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Return to Dashboard</a>
+    <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+  </div>
+</div>
+{% endblock %}

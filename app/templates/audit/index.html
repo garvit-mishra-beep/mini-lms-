@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs & Traceability — MiniLMS{% endblock %}
+{% block header_title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Security & Transaction Audit Trail</h1>
+    <p class="page-subtitle">Append-only audit records from <code>audit_logs</code> and <code>grade_change_history</code> tables.</p>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+  <form method="GET" action="{{ url_for('audit.index') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 250px;">
+      <input type="text" name="search" class="form-control" placeholder="Search by details, actor, or action..." value="{{ search }}">
+    </div>
+    <div style="width: 170px;">
+      <select name="entity" class="form-select" onchange="this.form.submit()">
+        <option value="ALL" {% if current_entity == 'ALL' %}selected{% endif %}>All Entities</option>
+        {% for ent in entities %}
+          <option value="{{ ent }}" {% if current_entity == ent %}selected{% endif %}>{{ ent }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="width: 170px;">
+      <select name="action" class="form-select" onchange="this.form.submit()">
+        <option value="ALL" {% if current_action == 'ALL' %}selected{% endif %}>All Action Types</option>
+        {% for act in actions %}
+          <option value="{{ act }}" {% if current_action == act %}selected{% endif %}>{{ act }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    {% if search or current_entity != 'ALL' or current_action != 'ALL' %}
+      <a href="{{ url_for('audit.index') }}" class="btn btn-secondary" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Main Audit Logs Table -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">System Audit Events ({{ logs|length }})</h2>
+    <span class="badge badge-primary">audit_logs</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Entity Name</th>
+          <th>Entity ID</th>
+          <th>Action Type</th>
+          <th>Performed By</th>
+          <th>Details</th>
+          <th>Action Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in logs %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">#{{ l.audit_id }}</td>
+            <td><strong>{{ l.entity_name }}</strong></td>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ l.entity_id }}</td>
+            <td><span class="badge badge-info">{{ l.action_type }}</span></td>
+            <td>
+              {% if l.actor_name %}
+                <strong>{{ l.actor_name }}</strong>
+                <span class="badge badge-secondary" style="font-size: 0.65rem;">{{ l.actor_role }}</span>
+              {% else %}
+                <span style="color: var(--text-muted);">System Trigger</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">{{ l.details or '—' }}</td>
+            <td style="color: var(--text-subtle); font-size: 0.78rem;">{{ l.action_time|date_fmt('%b %d, %Y %H:%M:%S') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No audit logs matching query.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Grade Change History Section (triggered by trg_grade_history) -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Grade Change History (Trigger: trg_grade_history)</h2>
+    <span class="badge badge-secondary">grade_change_history</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Change ID</th>
+          <th>Course</th>
+          <th>Student</th>
+          <th>Previous Score</th>
+          <th>Updated Score</th>
+          <th>Faculty Reason</th>
+          <th>Changed By</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in history %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">#{{ h.change_id }}</td>
+            <td><strong>{{ h.course_code }}</strong></td>
+            <td>{{ h.student_name }}</td>
+            <td style="color: var(--danger); font-weight: 600;">{{ h.old_score }}%</td>
+            <td style="color: var(--success); font-weight: 600;">{{ h.new_score }}%</td>
+            <td><em>{{ h.reason }}</em></td>
+            <td>{{ h.actor_name }} ({{ h.actor_role }})</td>
+            <td style="color: var(--text-subtle); font-size: 0.78rem;">{{ h.changed_at|date_fmt }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No grade modifications recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

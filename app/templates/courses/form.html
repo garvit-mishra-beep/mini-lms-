@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Course — MiniLMS{% endblock %}
+{% block header_title %}{{ action }} Course{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 1rem auto;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">{{ action }} Course</h2>
+      <a href="{{ url_for('courses.index') }}" class="btn btn-secondary btn-sm">Cancel</a>
+    </div>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+        <label class="form-label" for="course_code">Course Code *</label>
+        <input type="text" id="course_code" name="course_code" class="form-control" 
+               placeholder="e.g. CS301, DBMS102" value="{{ course.course_code if course else '' }}"
+               {% if action == 'Edit' %}readonly style="background-color: var(--bg-subtle);"{% else %}required{% endif %}>
+        <div class="form-help">Unique uppercase alphanumeric code for this course.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="title">Course Title *</label>
+        <input type="text" id="title" name="title" class="form-control" 
+               placeholder="e.g. Advanced Database Management Systems" 
+               value="{{ course.title if course else '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Course Description / Syllabus</label>
+        <textarea id="description" name="description" class="form-control" rows="4" 
+                  placeholder="Outline topics covered, target learners, and outcomes...">{{ course.description if course else '' }}</textarea>
+      </div>
+
+      {% if action == 'Create' and teachers %}
+      <div class="form-group">
+        <label class="form-label" for="teacher_id">Initial Course Faculty Owner (Optional)</label>
+        <select id="teacher_id" name="teacher_id" class="form-select">
+          <option value="">Select Instructor...</option>
+          {% for t in teachers %}
+            <option value="{{ t.teacher_id }}">{{ t.full_name }} ({{ t.employee_code }})</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">Every course must have at least one authorized faculty before it can be published.</div>
+      </div>
+      {% endif %}
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <a href="{{ url_for('courses.index') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">{{ action }} Course</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

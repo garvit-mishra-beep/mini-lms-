@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Enrollment #{{ enrollment.enrollment_id }} — MiniLMS{% endblock %}
+{% block header_title %}Enrollment Record{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem; color: var(--primary);">
+        Enrollment #{{ enrollment.enrollment_id }}
+      </span>
+      <span class="badge {{ enrollment.status|status_badge }}">{{ enrollment.status }}</span>
+      <span class="badge {{ 'badge-success' if enrollment.completion_status == 'COMPLETED' else 'badge-warning' }}">
+        Completion: {{ enrollment.completion_status or 'IN_PROGRESS' }}
+      </span>
+    </div>
+    <h1 class="page-title">{{ enrollment.student_name }} &bull; {{ enrollment.course_code }}</h1>
+    <p class="page-subtitle">{{ enrollment.course_title }} &bull; Enrolled on {{ enrollment.enrolled_at|date_fmt }}</p>
+  </div>
+  <div class="page-actions">
+    {% if current_user.is_admin or current_user.is_teacher %}
+      <form method="POST" action="{{ url_for('enrollments.evaluate', enrollment_id=enrollment.enrollment_id) }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-secondary btn-sm">🔄 Run sp_update_completion</button>
+      </form>
+      {% if enrollment.completion_status == 'COMPLETED' and not enrollment.certificate_code %}
+        <form method="POST" action="{{ url_for('certificates.issue', enrollment_id=enrollment.enrollment_id) }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-success btn-sm">📜 Issue Certificate</button>
+        </form>
+      {% endif %}
+    {% endif %}
+    {% if enrollment.certificate_code %}
+      <a href="{{ url_for('certificates.view_certificate', certificate_code=enrollment.certificate_code) }}" class="btn btn-primary btn-sm">
+        📜 View Certificate
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+  <!-- Left: Curriculum Progress & Quiz Attempts -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Lesson Progress -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Lesson Progress Requirements</h2>
+        <span class="badge badge-secondary">{{ progress|selectattr('completed_at')|list|length }} / {{ progress|length }} Completed</span>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>Lesson Title</th>
+              <th>Completion Status</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in progress %}
+              <tr>
+                <td style="font-family: var(--font-mono);">{{ p.sequence_no }}</td>
+                <td><strong>{{ p.title }}</strong></td>
+                <td>
+                  {% if p.completed_at %}
+                    <span class="badge badge-success">✓ Completed</span>
+                  {% else %}
+                    <span class="badge badge-warning">Pending</span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.8rem;">
+                  {{ p.completed_at|date_fmt if p.completed_at else '—' }}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No lessons configured for this course.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quiz Attempts in this Course -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Quiz Attempts in this Course</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Attempt #</th>
+              <th>Quiz Title</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Submission Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in attempts %}
+              <tr>
+                <td style="font-family: var(--font-mono);">#{{ a.attempt_no }}</td>
+                <td><strong>{{ a.quiz_title }}</strong></td>
+                <td><span class="badge {{ 'badge-success' if a.status == 'SUBMITTED' else 'badge-warning' }}">{{ a.status }}</span></td>
+                <td>
+                  {% if a.score is not none %}
+                    <strong>{{ a.score }}</strong> / {{ a.max_score }}
+                  {% else %}
+                    <span style="color: var(--text-muted);">In progress</span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.8rem;">
+                  {{ a.submitted_at|date_fmt if a.submitted_at else '—' }}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No quiz attempts logged for this enrollment.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Academic Standing & Actions -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Academic Standing</h2>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.88rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Final Course Score:</span>
+          <strong>{{ enrollment.final_score ~ '%' if enrollment.final_score is not none else 'Not published' }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Letter Grade:</span>
+          <span class="badge badge-primary">{{ enrollment.letter_grade or 'Pending' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Grade Published:</span>
+          <span>{{ 'Yes' if enrollment.grade_published else 'No' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Completion Status:</span>
+          <span class="badge {{ 'badge-success' if enrollment.completion_status == 'COMPLETED' else 'badge-warning' }}">
+            {{ enrollment.completion_status or 'IN_PROGRESS' }}
+          </span>
+        </div>
+        {% if enrollment.completed_at %}
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Completed At:</span>
+          <span>{{ enrollment.completed_at|date_fmt }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Student & Course Details -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Relational Context</h2>
+      </div>
+      <div style="font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div><strong>Student:</strong> {{ enrollment.student_name }} ({{ enrollment.roll_no }})</div>
+        <div><strong>Email:</strong> {{ enrollment.student_email }}</div>
+        <div><strong>Course:</strong> {{ enrollment.course_code }} ({{ enrollment.course_status }})</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

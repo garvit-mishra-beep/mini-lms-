@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — MiniLMS DBMS PBL</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- Responsive Navigation Sidebar -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">🎓</div>
+        <div class="brand-info">
+          <div class="brand-text">MiniLMS</div>
+          <span class="brand-tag">MySQL 8.0</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Core Learning</div>
+        <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('courses.index') }}" class="nav-item {% if active == 'courses' %}active{% endif %}">
+          <span class="nav-icon">📚</span>
+          <span>Courses</span>
+        </a>
+        <a href="{{ url_for('enrollments.index') }}" class="nav-item {% if active == 'enrollments' %}active{% endif %}">
+          <span class="nav-icon">📝</span>
+          <span>Enrollments</span>
+        </a>
+        <a href="{{ url_for('modules.index') }}" class="nav-item {% if active == 'modules' %}active{% endif %}">
+          <span class="nav-icon">📑</span>
+          <span>Modules & Lessons</span>
+        </a>
+        <a href="{{ url_for('quizzes.index') }}" class="nav-item {% if active == 'quizzes' %}active{% endif %}">
+          <span class="nav-icon">✍️</span>
+          <span>Quizzes</span>
+        </a>
+
+        <div class="nav-section-title">People & Outcomes</div>
+        <a href="{{ url_for('students.index') }}" class="nav-item {% if active == 'students' %}active{% endif %}">
+          <span class="nav-icon">👨‍🎓</span>
+          <span>Students</span>
+        </a>
+        <a href="{{ url_for('teachers.index') }}" class="nav-item {% if active == 'teachers' %}active{% endif %}">
+          <span class="nav-icon">👩‍🏫</span>
+          <span>Teachers</span>
+        </a>
+        <a href="{{ url_for('grades.index') }}" class="nav-item {% if active == 'grades' %}active{% endif %}">
+          <span class="nav-icon">🏆</span>
+          <span>Grades & Reports</span>
+        </a>
+        <a href="{{ url_for('certificates.index') }}" class="nav-item {% if active == 'certificates' %}active{% endif %}">
+          <span class="nav-icon">📜</span>
+          <span>Certificates</span>
+        </a>
+
+        <div class="nav-section-title">DBMS Viva & Insights</div>
+        <a href="{{ url_for('analytics.index') }}" class="nav-item {% if active == 'analytics' %}active{% endif %}">
+          <span class="nav-icon">📈</span>
+          <span>Analytics</span>
+        </a>
+        <a href="{{ url_for('explorer.index') }}" class="nav-item {% if active == 'explorer' %}active{% endif %}">
+          <span class="nav-icon">🗄️</span>
+          <span>Database Explorer</span>
+        </a>
+        <a href="{{ url_for('audit.index') }}" class="nav-item {% if active == 'audit' %}active{% endif %}">
+          <span class="nav-icon">🛡️</span>
+          <span>Audit Logs</span>
+        </a>
+        <a href="{{ url_for('settings.index') }}" class="nav-item {% if active == 'settings' %}active{% endif %}">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar User Badge & Role -->
+      <div class="sidebar-footer">
+        {% if current_user.is_authenticated %}
+          <div class="user-badge">
+            <div class="avatar-circle">
+              {{ current_user.full_name[:1] }}
+            </div>
+            <div class="user-info">
+              <div class="user-name" title="{{ current_user.full_name }}">{{ current_user.full_name }}</div>
+              <span class="user-role-tag badge badge-{{ 'primary' if current_user.is_admin else ('info' if current_user.is_teacher else 'success') }}">
+                {{ current_user.role }}
+              </span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" title="Log Out" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+              🚪
+            </a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm" style="width: 100%;">Log In</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <!-- Main Content Viewport -->
+    <div class="app-main">
+      <!-- Top Sticky Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle Navigation">☰</button>
+          <div class="breadcrumbs">
+            <span>MiniLMS</span>
+            <span class="breadcrumb-sep">/</span>
+            <span style="color: var(--text-main); font-weight: 600;">{% block header_title %}{{ active|capitalize }}{% endblock %}</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- 1-Click Role Switcher for Viva Evaluation -->
+          <div style="display: flex; gap: 0.4rem; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">DEMO ROLE:</span>
+            <a href="{{ url_for('auth.demo_login', role='admin') }}" class="role-switcher-btn" title="Switch to Admin">
+              👑 Admin
+            </a>
+            <a href="{{ url_for('auth.demo_login', role='teacher') }}" class="role-switcher-btn" title="Switch to Teacher">
+              👩‍🏫 Teacher
+            </a>
+            <a href="{{ url_for('auth.demo_login', role='student') }}" class="role-switcher-btn" title="Switch to Student">
+              👨‍🎓 Student
+            </a>
+          </div>
+
+          <!-- Dark/Light Theme Toggle -->
+          <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Theme">
+            <span id="theme-icon">&#9790;</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Page Content -->
+      <main class="page-content">
+        <!-- Flash Messages Container -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'error' if category == 'error' else ('warning' if category == 'warning' else ('info' if category == 'info' else 'success')) }}">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <span>
+                    {% if category == 'error' %}⚠️{% elif category == 'warning' %}🔔{% elif category == 'info' %}ℹ️{% else %}✅{% endif %}
+                  </span>
+                  <span>{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.1rem;">&times;</button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

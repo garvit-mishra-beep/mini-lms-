@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Quizzes & Assessments — MiniLMS{% endblock %}
+{% block header_title %}Quizzes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Quizzes & Evaluations</h1>
+    <p class="page-subtitle">Formative and summative assessments tracked in <code>quizzes</code> and <code>attempts</code> tables.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Quiz Title</th>
+          <th>Course & Lesson</th>
+          <th>Max Score</th>
+          <th>Allowed Attempts</th>
+          <th>Submissions</th>
+          <th>Average Score</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quizzes %}
+          <tr>
+            <td>
+              <a href="{{ url_for('quizzes.view_quiz', quiz_id=q.quiz_id) }}">
+                <strong>{{ q.title }}</strong>
+              </a>
+              {% if q.required_for_completion %}
+                <span class="badge badge-warning" style="font-size: 0.65rem; margin-left: 0.3rem;">Mandatory</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>{{ q.course_code }}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ q.lesson_title }}</div>
+            </td>
+            <td><strong>{{ q.max_score }}</strong> pts</td>
+            <td>{{ q.allowed_attempts }} attempts max</td>
+            <td>{{ q.total_attempts or 0 }} submissions</td>
+            <td>
+              {% if q.average_score is not none %}
+                <strong>{{ q.average_score }}</strong> / {{ q.max_score }}
+              {% else %}
+                <span style="color: var(--text-subtle);">No submissions</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('quizzes.view_quiz', quiz_id=q.quiz_id) }}" class="btn btn-secondary btn-sm">
+                View & Take Quiz
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No quizzes created yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

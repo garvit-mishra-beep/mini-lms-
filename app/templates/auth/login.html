@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In — MiniLMS Academic Platform</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                  radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                  var(--bg-primary);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .demo-selector {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+    }
+    .demo-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1rem;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+    .demo-btn:hover {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateX(3px);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎓</div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">MiniLMS Portal</h1>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.2rem;">MySQL 8.0 Full-Stack Learning Management System</p>
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'error' if category == 'error' else ('warning' if category == 'warning' else ('info' if category == 'info' else 'success')) }}" style="margin-bottom: 1.25rem;">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="name@example.test" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+          Sign In
+        </button>
+      </form>
+
+      <!-- 1-Click Viva Demonstration Selector -->
+      <div class="demo-selector">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle);">
+            ⚡ 1-Click Demo Logins (Viva Mode)
+          </span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">PW: MiniLMS@2026</span>
+        </div>
+
+        <div class="demo-grid">
+          <a href="{{ url_for('auth.demo_login', role='admin') }}" class="demo-btn">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>👑</span>
+              <div>
+                <div>Demo Admin</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">admin@example.test</div>
+              </div>
+            </div>
+            <span class="badge badge-primary">ADMIN</span>
+          </a>
+
+          <a href="{{ url_for('auth.demo_login', role='teacher') }}" class="demo-btn">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>👩‍🏫</span>
+              <div>
+                <div>Dr Anita Sharma</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">anita@example.test</div>
+              </div>
+            </div>
+            <span class="badge badge-info">TEACHER</span>
+          </a>
+
+          <a href="{{ url_for('auth.demo_login', role='student') }}" class="demo-btn">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>👨‍🎓</span>
+              <div>
+                <div>Aarav Singh</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">aarav@example.test</div>
+              </div>
+            </div>
+            <span class="badge badge-success">STUDENT</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

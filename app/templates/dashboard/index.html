@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MiniLMS{% endblock %}
+{% block header_title %}System Overview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Welcome back, {{ current_user.full_name }}</h1>
+    <p class="page-subtitle">Real-time learning analytics directly synchronized with MySQL 8.0 <code style="font-family: var(--font-mono); color: var(--primary);">minilms_db</code>.</p>
+  </div>
+  <div class="page-actions">
+    {% if current_user.is_admin or current_user.is_teacher %}
+      <a href="{{ url_for('courses.create') }}" class="btn btn-secondary">➕ New Course</a>
+      <a href="{{ url_for('enrollments.index') }}" class="btn btn-primary">📝 Manage Enrollments</a>
+    {% else %}
+      <a href="{{ url_for('enrollments.index') }}" class="btn btn-primary">➕ Enroll in a Course</a>
+      <a href="{{ url_for('quizzes.index') }}" class="btn btn-secondary">✍️ Available Quizzes</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- KPI Metric Cards Grid -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-blue">👨‍🎓</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Students</span>
+      <span class="kpi-value">{{ metrics.students }}</span>
+      <span class="kpi-subtext">{{ metrics.active_students }} Active Accounts</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-cyan">📚</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Courses</span>
+      <span class="kpi-value">{{ metrics.courses }}</span>
+      <span class="kpi-subtext">{{ metrics.published_courses }} Published</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-green">📝</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Enrollments</span>
+      <span class="kpi-value">{{ metrics.enrollments }}</span>
+      <span class="kpi-subtext">{{ metrics.active_enrollments }} Active / {{ metrics.completions }} Completed</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-amber">✍️</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Quizzes & Attempts</span>
+      <span class="kpi-value">{{ metrics.attempts }}</span>
+      <span class="kpi-subtext">{{ metrics.quizzes }} Assessment Quizzes</span>
+    </div>
+  </div>
+</div>
+
+<!-- Student Personal View (if student is logged in) -->
+{% if current_user.is_student %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">My Enrolled Courses</h2>
+    <a href="{{ url_for('courses.index') }}" class="btn btn-secondary btn-sm">Browse Catalog</a>
+  </div>
+  {% if personal_enrollments %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Title</th>
+            <th>Enrollment Status</th>
+            <th>Completion</th>
+            <th>Grade</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in personal_enrollments %}
+            <tr>
+              <td><strong>{{ e.course_code }}</strong></td>
+              <td>{{ e.course_title }}</td>
+              <td><span class="badge {{ e.status|status_badge }}">{{ e.status }}</span></td>
+              <td>
+                <span class="badge {{ 'badge-success' if e.completion_status == 'COMPLETED' else 'badge-warning' }}">
+                  {{ e.completion_status or 'IN_PROGRESS' }}
+                </span>
+              </td>
+              <td>
+                {% if e.final_score is not none %}
+                  <strong>{{ e.final_score }}%</strong> ({{ e.letter_grade }})
+                {% else %}
+                  <span style="color: var(--text-muted);">In Progress</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('courses.detail', course_id=e.course_id) }}" class="btn btn-secondary btn-sm">Study</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+      <p>You have not enrolled in any courses yet.</p>
+      <a href="{{ url_for('enrollments.index') }}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;">Browse & Enroll</a>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Two-Column Grid: Course Summary & Recent Activity -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- Course Enrollment Breakdown (from SQL view v_course_enrollments) -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Enrollment by Course</h2>
+      <span class="badge badge-secondary" style="font-family: var(--font-mono); font-size: 0.68rem;">v_course_enrollments</span>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Course Title</th>
+            <th style="text-align: right;">Total Enrolled</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in course_summary %}
+            <tr>
+              <td><strong>{{ c.course_code }}</strong></td>
+              <td>{{ c.title }}</td>
+              <td style="text-align: right; font-weight: 700; color: var(--primary);">{{ c.total_enrollments }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No courses found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Enrollments -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Latest Enrollments</h2>
+      <a href="{{ url_for('enrollments.index') }}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_enrollments %}
+            <tr>
+              <td><strong>{{ r.student_name }}</strong></td>
+              <td>{{ r.course_code }}</td>
+              <td style="color: var(--text-muted); font-size: 0.8rem;">{{ r.enrolled_at|date_fmt }}</td>
+              <td><span class="badge {{ r.status|status_badge }}">{{ r.status }}</span></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No enrollments logged.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Traceability & Audit Logs -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Audit Trail & Transaction History</h2>
+    <a href="{{ url_for('audit.index') }}" class="btn btn-secondary btn-sm">Complete Audit Log</a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Entity</th>
+          <th>Action</th>
+          <th>Actor</th>
+          <th>Details</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in recent_audits %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">#{{ a.audit_id }}</td>
+            <td><strong>{{ a.entity_name }}</strong></td>
+            <td><span class="badge badge-info">{{ a.action_type }}</span></td>
+            <td>{{ a.actor_name or 'System' }}</td>
+            <td style="color: var(--text-muted); font-size: 0.82rem;">{{ a.details or '—' }}</td>
+            <td style="color: var(--text-subtle); font-size: 0.78rem;">{{ a.action_time|date_fmt('%b %d, %H:%M') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No audit events recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

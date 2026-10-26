@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Access Denied — 403{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 580px; margin: 3rem auto; text-align: center; padding: 3rem 2rem;">
+  <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛑</div>
+  <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--danger); margin-bottom: 0.5rem;">403 Forbidden</h1>
+  <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+    You do not possess the required authorization permissions to access this database entity or resource.
+  </p>
+  <div style="display: flex; justify-content: center; gap: 1rem;">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Return to Dashboard</a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">Switch User Role</a>
+  </div>
+</div>
+{% endblock %}

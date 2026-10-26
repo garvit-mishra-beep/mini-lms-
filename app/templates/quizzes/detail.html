@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }} — Quiz Assessment{% endblock %}
+{% block header_title %}Quiz Overview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">{{ quiz.course_code }}</span>
+      <span class="breadcrumb-sep">&bull;</span>
+      <span style="color: var(--text-muted); font-size: 0.88rem;">{{ quiz.lesson_title }}</span>
+    </div>
+    <h1 class="page-title">{{ quiz.title }}</h1>
+    <p class="page-subtitle">Max Score: {{ quiz.max_score }} points &bull; Allowed Attempts: {{ quiz.allowed_attempts }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('quizzes.index') }}" class="btn btn-secondary btn-sm">← Back to Quizzes</a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+  <!-- Left: Quiz Description & Start Action -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="card" style="padding: 2rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Quiz Instructions</h2>
+      <ul style="margin-left: 1.5rem; line-height: 1.8; color: var(--text-main); font-size: 0.92rem; margin-bottom: 2rem;">
+        <li>This quiz consists of <strong>{{ question_count }}</strong> questions.</li>
+        <li>Total points available: <strong>{{ quiz.max_score }}</strong> points.</li>
+        <li>You are permitted up to <strong>{{ quiz.allowed_attempts }}</strong> attempts in total.</li>
+        <li>Scoring is verified and calculated directly <strong>server-side</strong> and recorded via stored procedure <code>sp_submit_attempt</code>.</li>
+        <li>Submissions are immutable once completed.</li>
+      </ul>
+
+      {% if current_user.is_student %}
+        {% if can_attempt %}
+          <form method="POST" action="{{ url_for('quizzes.start_quiz', quiz_id=quiz.quiz_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+              ✍️ Start New Quiz Attempt (Attempt {{ attempts|length + 1 }}/{{ quiz.allowed_attempts }})
+            </button>
+          </form>
+        {% else %}
+          <div class="alert alert-warning" style="margin-bottom: 0;">
+            <span>⚠️ {{ reason_blocked }}</span>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info" style="margin-bottom: 0;">
+          <span>ℹ️ You are logged in as <strong>{{ current_user.role }}</strong>. Switch to a Student account to take this quiz.</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Attempt History -->
+    {% if attempts %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Your Previous Attempts</h2>
+        <span class="badge badge-secondary">{{ attempts|length }} / {{ quiz.allowed_attempts }} Used</span>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Attempt</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Started</th>
+              <th>Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in attempts %}
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 600;">Attempt #{{ a.attempt_no }}</td>
+                <td><span class="badge {{ 'badge-success' if a.status == 'SUBMITTED' else 'badge-warning' }}">{{ a.status }}</span></td>
+                <td>
+                  {% if a.score is not none %}
+                    <strong>{{ a.score }}</strong> / {{ quiz.max_score }}
+                  {% else %}
+                    <span style="color: var(--text-muted);">In Progress</span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.8rem;">{{ a.started_at|date_fmt }}</td>
+                <td style="color: var(--text-muted); font-size: 0.8rem;">{{ a.submitted_at|date_fmt if a.submitted_at else '—' }}</td>
+                <td>
+                  {% if a.status == 'SUBMITTED' %}
+                    <a href="{{ url_for('quizzes.attempt_results', attempt_id=a.attempt_id) }}" class="btn btn-secondary btn-sm">
+                      Review Score
+                    </a>
+                  {% else %}
+                    <a href="{{ url_for('quizzes.take_quiz', attempt_id=a.attempt_id) }}" class="btn btn-primary btn-sm">
+                      Resume
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Availability & Metadata Rules -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Availability Window</h2>
+      </div>
+      <div style="font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.6rem;">
+        <div>
+          <span style="color: var(--text-muted);">Available From:</span>
+          <div>{{ quiz.available_from|date_fmt('%b %d, %Y %H:%M') }}</div>
+        </div>
+        <div>
+          <span style="color: var(--text-muted);">Available Until:</span>
+          <div>{{ quiz.available_until|date_fmt('%b %d, %Y %H:%M') }}</div>
+        </div>
+        <div>
+          <span style="color: var(--text-muted);">Completion Rule:</span>
+          <div>{{ 'Mandatory for Certificate' if quiz.required_for_completion else 'Optional practice' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

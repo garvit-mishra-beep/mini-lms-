@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificate {{ cert.certificate_code }} — MiniLMS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    @media print {
+      body { background: white !important; }
+      .no-print { display: none !important; }
+      .cert-card { box-shadow: none !important; border: 10px double #000 !important; }
+    }
+  </style>
+</head>
+<body style="background-color: var(--bg-primary); padding: 2rem;">
+  <div class="no-print" style="max-width: 760px; margin: 0 auto 1.5rem auto; display: flex; justify-content: space-between; align-items: center;">
+    <a href="{{ url_for('certificates.index') }}" class="btn btn-secondary btn-sm">← Back to MiniLMS</a>
+    <button onclick="window.print()" class="btn btn-primary btn-sm">🖨️ Print Certificate</button>
+  </div>
+
+  <div class="cert-card">
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎓</div>
+    <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary); margin-bottom: 0.5rem;">
+      MiniLMS Academic Accreditation
+    </div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 1.5rem; letter-spacing: -0.02em;">
+      Certificate of Completion
+    </h1>
+
+    <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 0.75rem;">This certifies that</p>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; text-decoration: underline; text-decoration-color: var(--primary);">
+      {{ cert.student_name }}
+    </div>
+    <div style="font-size: 0.88rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 1.5rem;">
+      Roll No: {{ cert.roll_no }} &bull; Enrollment: {{ cert.enrollment_no }}
+    </div>
+
+    <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+      has successfully completed all lectures, curriculum modules, and assessments for
+    </p>
+    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">
+      {{ cert.course_code }}: {{ cert.course_title }}
+    </div>
+
+    {% if cert.final_score is not none %}
+    <div style="font-size: 1rem; color: var(--text-main); margin-bottom: 2rem;">
+      Graduated with an overall grade of <strong>{{ cert.final_score }}% (Grade {{ cert.letter_grade }})</strong>
+    </div>
+    {% endif %}
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+      <div style="text-align: left;">
+        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-subtle);">AUTHENTICATION CODE</div>
+        <div style="font-family: var(--font-mono); font-weight: 700; color: var(--text-main); font-size: 0.9rem;">{{ cert.certificate_code }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Issued: {{ cert.issued_at|date_fmt }}</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-weight: 700; color: var(--text-main);">{{ cert.instructor_name or 'Course Faculty Director' }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Instructor / DBMS Department</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

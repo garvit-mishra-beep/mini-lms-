@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Analytics & Learning Insights — MiniLMS{% endblock %}
+{% block header_title %}Analytics{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN for live database analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Live Database Analytics</h1>
+    <p class="page-subtitle">Interactive visual metrics generated directly from SQL aggregations and views.</p>
+  </div>
+  <div class="page-actions">
+    <span class="badge badge-success" style="padding: 0.5rem 1rem;">● Live SQL Feeds</span>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-blue">👨‍🎓</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Total Students</span>
+      <span class="kpi-value">{{ kpis.total_students }}</span>
+      <span class="kpi-subtext">{{ kpis.active_students }} Active Accounts</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-cyan">📚</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Published Courses</span>
+      <span class="kpi-value">{{ kpis.published_courses }}</span>
+      <span class="kpi-subtext">{{ kpis.total_teachers }} Faculty Instructors</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-green">📝</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Active Enrollments</span>
+      <span class="kpi-value">{{ kpis.active_enrollments }}</span>
+      <span class="kpi-subtext">{{ kpis.completed_enrollments }} Completed Coursework</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-amber">🏆</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Average Grade</span>
+      <span class="kpi-value">{{ kpis.avg_grade or '0' }}%</span>
+      <span class="kpi-subtext">{{ kpis.certificates_issued }} Certificates Issued</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2x2 Grid of Live Chart.js Charts -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- 1. Enrollments per Course Bar Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Enrollments by Course</h2>
+      <span class="badge badge-secondary">v_course_enrollments</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="courseChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 2. Grade Distribution Bar Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Grade Distribution</h2>
+      <span class="badge badge-secondary">v_student_grades</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="gradeChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 3. Course Completion Percentage Bar Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Course Completion Rates (%)</h2>
+      <span class="badge badge-secondary">v_course_completion</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="completionChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 4. Quiz Performance Comparison Bar Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Quiz Average Performance (%)</h2>
+      <span class="badge badge-secondary">v_quiz_performance</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="quizChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Embedded JSON Payload for Chart.js -->
+<script>
+const chartData = {{ chart_json|safe }};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+
+  // 1. Course Enrollments
+  new Chart(document.getElementById('courseChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.course_labels,
+      datasets: [{
+        label: 'Total Enrollments',
+        data: chartData.course_data,
+        backgroundColor: '#4f46e5',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: textColor }, grid: { display: false } },
+        y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+      }
+    }
+  });
+
+  // 2. Grade Distribution
+  new Chart(document.getElementById('gradeChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.grade_labels.length ? chartData.grade_labels : ['A', 'B', 'C', 'D', 'F'],
+      datasets: [{
+        label: 'Students Count',
+        data: chartData.grade_data.length ? chartData.grade_data : [0, 0, 0, 0, 0],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: textColor }, grid: { display: false } },
+        y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+      }
+    }
+  });
+
+  // 3. Completion Rates
+  new Chart(document.getElementById('completionChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.comp_labels,
+      datasets: [{
+        label: 'Completion Rate (%)',
+        data: chartData.comp_data,
+        backgroundColor: '#06b6d4',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: textColor }, grid: { display: false } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true, max: 100 }
+      }
+    }
+  });
+
+  // 4. Quiz Performance
+  new Chart(document.getElementById('quizChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.quiz_labels,
+      datasets: [{
+        label: 'Average Score (%)',
+        data: chartData.quiz_data,
+        backgroundColor: '#f59e0b',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: textColor }, grid: { display: false } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true, max: 100 }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

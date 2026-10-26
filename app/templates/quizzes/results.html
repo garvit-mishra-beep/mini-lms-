@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Quiz Results: {{ attempt.quiz_title }} — MiniLMS{% endblock %}
+{% block header_title %}Assessment Results{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">{{ attempt.course_code }}</span>
+      <span class="badge badge-success">Submitted & Graded</span>
+    </div>
+    <h1 class="page-title">{{ attempt.quiz_title }} — Results</h1>
+    <p class="page-subtitle">Attempt #{{ attempt.attempt_no }} completed on {{ attempt.submitted_at|date_fmt }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('quizzes.view_quiz', quiz_id=attempt.quiz_id) }}" class="btn btn-secondary btn-sm">← Back to Quiz</a>
+    <a href="{{ url_for('grades.index') }}" class="btn btn-primary btn-sm">View Gradebook</a>
+  </div>
+</div>
+
+<!-- Score Highlight Card -->
+<div class="card" style="max-width: 800px; margin: 0 auto 2rem auto; text-align: center; padding: 2.5rem; background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-subtle) 100%);">
+  <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem;">
+    Final Calculated Score
+  </div>
+  <div style="font-size: 3.5rem; font-weight: 800; color: var(--primary); line-height: 1.1;">
+    {{ attempt.score }} <span style="font-size: 1.5rem; color: var(--text-muted); font-weight: 500;">/ {{ attempt.max_score }}</span>
+  </div>
+  <div style="margin-top: 0.75rem;">
+    {% set pct = (attempt.score / attempt.max_score * 100)|round(1) if attempt.max_score else 0 %}
+    <span class="badge {{ 'badge-success' if pct >= 60 else 'badge-danger' }}" style="font-size: 1rem; padding: 0.4rem 1rem;">
+      {{ pct }}% &bull; {{ 'PASSED' if pct >= 60 else 'NEEDS IMPROVEMENT' }}
+    </span>
+  </div>
+  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">
+    Transaction executed via <code>sp_submit_attempt</code> and audited into <code>audit_logs</code>.
+  </div>
+</div>
+
+<!-- Question-by-Question Graded Breakdown -->
+<div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+  <h2 style="font-size: 1.2rem; font-weight: 700;">Question Breakdown</h2>
+  {% for a in answers %}
+    <div class="card" style="border-left: 5px solid {{ 'var(--success)' if a.is_correct else 'var(--danger)' }};">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+        <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          Question {{ loop.index }}
+        </span>
+        <span class="badge {{ 'badge-success' if a.is_correct else 'badge-danger' }}">
+          {{ a.points_awarded }} / {{ a.max_points }} Points
+        </span>
+      </div>
+
+      <h3 style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-bottom: 1rem;">
+        {{ a.question_text }}
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem;">
+        <div style="padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background-color: {{ 'var(--success-light)' if a.is_correct else 'var(--danger-light)' }};">
+          <strong>Your Answer:</strong> {{ a.chosen_option_text }}
+          <span style="float: right;">{{ '✓ Correct' if a.is_correct else '✗ Incorrect' }}</span>
+        </div>
+        {% if not a.is_correct %}
+          <div style="padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background-color: var(--success-light); color: var(--success);">
+            <strong>Correct Answer:</strong> {{ a.correct_option_text }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

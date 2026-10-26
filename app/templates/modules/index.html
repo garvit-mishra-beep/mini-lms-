@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Modules & Lessons — MiniLMS{% endblock %}
+{% block header_title %}Modules & Lessons{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Curriculum Structure</h1>
+    <p class="page-subtitle">Organized learning modules, ordered lessons, and prerequisite hierarchies.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Select a Course to Manage Curriculum</h2>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Status</th>
+          <th>Modules</th>
+          <th>Total Lessons</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in courses %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">{{ c.course_code }}</td>
+            <td><strong>{{ c.title }}</strong></td>
+            <td><span class="badge {{ c.status|status_badge }}">{{ c.status }}</span></td>
+            <td><strong>{{ c.module_count }}</strong> modules</td>
+            <td><strong>{{ c.lesson_count }}</strong> lessons</td>
+            <td>
+              <a href="{{ url_for('modules.course_modules', course_id=c.course_id) }}" class="btn btn-secondary btn-sm">
+                View & Edit Modules
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

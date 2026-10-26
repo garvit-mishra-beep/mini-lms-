@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Course Catalog — MiniLMS{% endblock %}
+{% block header_title %}Courses{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Course Catalog</h1>
+    <p class="page-subtitle">Academic curriculum with instructor assignments, modules, and quiz requirements.</p>
+  </div>
+  <div class="page-actions">
+    {% if current_user.is_admin or current_user.is_teacher %}
+      <a href="{{ url_for('courses.create') }}" class="btn btn-primary">➕ Create New Course</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Search & Status Filter Bar -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+  <form method="GET" action="{{ url_for('courses.index') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 250px;">
+      <input type="text" name="search" class="form-control" placeholder="Search by course code, title, or description..." value="{{ search }}">
+    </div>
+    <div style="width: 180px;">
+      <select name="status" class="form-select" onchange="this.form.submit()">
+        <option value="ALL" {% if current_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+        <option value="PUBLISHED" {% if current_status == 'PUBLISHED' %}selected{% endif %}>Published</option>
+        <option value="DRAFT" {% if current_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+        <option value="ARCHIVED" {% if current_status == 'ARCHIVED' %}selected{% endif %}>Archived</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    {% if search or current_status != 'ALL' %}
+      <a href="{{ url_for('courses.index') }}" class="btn btn-secondary" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Courses Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+  {% for c in courses %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <span style="font-family: var(--font-mono); font-weight: 700; color: var(--primary); font-size: 0.95rem;">
+            {{ c.course_code }}
+          </span>
+          <span class="badge {{ c.status|status_badge }}">{{ c.status }}</span>
+        </div>
+
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+          <a href="{{ url_for('courses.detail', course_id=c.course_id) }}">{{ c.title }}</a>
+        </h3>
+
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.45; margin-bottom: 1.25rem;">
+          {{ c.description or 'No course description specified.' }}
+        </p>
+      </div>
+
+      <div>
+        <!-- Course Metadata Statistics -->
+        <div style="display: flex; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+          <div>👥 <strong>{{ c.enrollment_count }}</strong> Enrolled</div>
+          <div>📑 <strong>{{ c.module_count }}</strong> Modules</div>
+          <div>👩‍🏫 <strong>{{ c.instructor_count }}</strong> Faculty</div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="{{ url_for('courses.detail', course_id=c.course_id) }}" class="btn btn-secondary btn-sm" style="flex: 1;">
+            View Course
+          </a>
+          {% if current_user.is_student %}
+            <form method="POST" action="{{ url_for('enrollments.index') }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="course_id" value="{{ c.course_id }}">
+              <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+            </form>
+          {% elif current_user.is_admin or current_user.is_teacher %}
+            <a href="{{ url_for('courses.edit', course_id=c.course_id) }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+      <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No courses matched your query.</p>
+      <a href="{{ url_for('courses.index') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

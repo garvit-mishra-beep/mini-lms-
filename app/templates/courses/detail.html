@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}{{ course.course_code }} — {{ course.title }}{% endblock %}
+{% block header_title %}Course Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem; color: var(--primary);">{{ course.course_code }}</span>
+      <span class="badge {{ course.status|status_badge }}">{{ course.status }}</span>
+    </div>
+    <h1 class="page-title">{{ course.title }}</h1>
+    <p class="page-subtitle">{{ course.description or 'No syllabus description provided.' }}</p>
+  </div>
+  <div class="page-actions">
+    {% if current_user.is_student %}
+      {% if student_enrollment %}
+        <span class="badge badge-success" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          ✓ You are Enrolled ({{ student_enrollment.status }})
+        </span>
+      {% else %}
+        <form method="POST" action="{{ url_for('enrollments.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="course_id" value="{{ course.course_id }}">
+          <button type="submit" class="btn btn-primary">Enroll in Course</button>
+        </form>
+      {% endif %}
+    {% elif current_user.is_admin or current_user.is_teacher %}
+      <a href="{{ url_for('courses.edit', course_id=course.course_id) }}" class="btn btn-secondary">✏️ Edit</a>
+      {% if course.status == 'DRAFT' %}
+        <form method="POST" action="{{ url_for('courses.publish', course_id=course.course_id) }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-success">🚀 Publish Course</button>
+        </form>
+      {% elif course.status == 'PUBLISHED' and current_user.is_admin %}
+        <form method="POST" action="{{ url_for('courses.archive', course_id=course.course_id) }}" style="display: inline;" data-confirm="Are you sure you want to archive this course?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-danger">📦 Archive Course</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Two-Column Layout: Modules & Lessons on Left, Instructors & Enrolled Students on Right -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+  <!-- Left Column: Curriculum Modules & Lessons -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Curriculum Modules & Lessons</h2>
+        {% if current_user.is_admin or current_user.is_teacher %}
+          <a href="{{ url_for('modules.course_modules', course_id=course.course_id) }}" class="btn btn-secondary btn-sm">Manage Modules</a>
+        {% endif %}
+      </div>
+
+      {% if modules %}
+        {% for m in modules %}
+          <div style="margin-bottom: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
+            <div style="background-color: var(--bg-subtle); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="color: var(--text-main);">Module {{ m.sequence_no }}: {{ m.title }}</strong>
+                {% if m.description %}
+                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">{{ m.description }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div style="padding: 0.5rem 0;">
+              {% set mod_lessons = lessons|selectattr('module_id', 'equalto', m.module_id)|list %}
+              {% if mod_lessons %}
+                {% for l in mod_lessons %}
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                      <span style="font-size: 0.85rem;">📄</span>
+                      <a href="{{ url_for('modules.view_lesson', lesson_id=l.lesson_id) }}" style="font-weight: 500; font-size: 0.88rem;">
+                        {{ l.sequence_no }}. {{ l.title }}
+                      </a>
+                    </div>
+                    <div>
+                      {% set l_quiz = quizzes|selectattr('lesson_id', 'equalto', l.lesson_id)|first %}
+                      {% if l_quiz %}
+                        <a href="{{ url_for('quizzes.view_quiz', quiz_id=l_quiz.quiz_id) }}" class="badge badge-amber" style="text-decoration: none;">
+                          ✍️ Quiz: {{ l_quiz.title }}
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div style="padding: 0.75rem 1rem; font-size: 0.82rem; color: var(--text-muted);">No lessons in this module.</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          <p>No modules created yet for this course.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Enrolled Students Table (Admin & Teacher view) -->
+    {% if current_user.is_admin or current_user.is_teacher %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Enrolled Students ({{ enrolled_students|length }})</h2>
+        <span class="badge badge-secondary">Real-Time</span>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Student Name</th>
+              <th>Status</th>
+              <th>Completion</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in enrolled_students %}
+              <tr>
+                <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ s.roll_no }}</td>
+                <td>
+                  <a href="{{ url_for('students.profile', student_id=s.student_id) }}"><strong>{{ s.full_name }}</strong></a>
+                </td>
+                <td><span class="badge {{ s.status|status_badge }}">{{ s.status }}</span></td>
+                <td>
+                  <span class="badge {{ 'badge-success' if s.completion_status == 'COMPLETED' else 'badge-warning' }}">
+                    {{ s.completion_status or 'IN_PROGRESS' }}
+                  </span>
+                </td>
+                <td>
+                  {% if s.final_score is not none %}
+                    <strong>{{ s.final_score }}%</strong> ({{ s.letter_grade }})
+                  {% else %}
+                    <span style="color: var(--text-muted);">Pending</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No students enrolled yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Column: Faculty & Metadata -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Course Instructors -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Course Faculty</h2>
+      </div>
+      {% if instructors %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for inst in instructors %}
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <a href="{{ url_for('teachers.profile', teacher_id=inst.teacher_id) }}" style="font-weight: 600; color: var(--text-main);">
+                  {{ inst.full_name }}
+                </a>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ inst.qualification or 'Faculty Member' }}</div>
+              </div>
+              <span class="badge {{ 'badge-primary' if inst.instructor_role == 'OWNER' else 'badge-secondary' }}">
+                {{ inst.instructor_role }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="color: var(--danger); font-size: 0.85rem;">
+          ⚠️ No authorized instructors assigned. Course cannot be published without faculty.
+        </div>
+      {% endif %}
+
+      <!-- Assign Instructor Form (Admin only) -->
+      {% if current_user.is_admin %}
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+        <form method="POST" action="{{ url_for('courses.assign_instructor', course_id=course.course_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" style="font-size: 0.78rem;">Assign Faculty</label>
+            <select name="teacher_id" class="form-select" required>
+              <option value="">Select Teacher...</option>
+              {% for t in teachers_list %}
+                <option value="{{ t.teacher_id }}">{{ t.full_name }} ({{ t.employee_code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <select name="role" class="form-select">
+              <option value="INSTRUCTOR">Instructor</option>
+              <option value="OWNER">Owner</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">Assign Faculty</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Course Information Box -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Database Info</h2>
+      </div>
+      <div style="font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Course ID:</span>
+          <span style="font-family: var(--font-mono); font-weight: 600;">#{{ course.course_id }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Unique Code:</span>
+          <span style="font-family: var(--font-mono); font-weight: 600;">{{ course.course_code }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Created:</span>
+          <span>{{ course.created_at|date_fmt }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

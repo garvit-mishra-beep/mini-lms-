@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Database Explorer & Viva Showcase — MiniLMS{% endblock %}
+{% block header_title %}Database Explorer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Relational Database Explorer</h1>
+    <p class="page-subtitle">Demonstration workbench showcasing tables, views, stored procedures, triggers, and SQL queries.</p>
+  </div>
+  <div class="page-actions">
+    <span class="badge badge-primary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+      MySQL 8.0 &bull; minilms_db
+    </span>
+  </div>
+</div>
+
+<!-- Curated SQL Demonstrations Section (Viva Feature) -->
+<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-cyan);">
+  <div class="card-header">
+    <h2 class="card-title">🎓 Curated SQL Demonstrations for DBMS Viva</h2>
+    <span class="badge badge-cyan">Pre-Validated Queries</span>
+  </div>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+    Execute and evaluate core relational algebra concepts against live database records.
+  </p>
+
+  <!-- Query Selector Pills -->
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+    {% for q in curated_queries %}
+      <a href="{{ url_for('explorer.index', name=current_name, query_id=q.id) }}" 
+         class="btn btn-sm {% if selected_query and selected_query.id == q.id %}btn-primary{% else %}btn-secondary{% endif %}">
+        {{ q.title }}
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if selected_query %}
+    <div style="background-color: var(--bg-subtle); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <strong>{{ selected_query.title }}</strong>
+        <span class="badge badge-info">{{ selected_query.category }}</span>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">{{ selected_query.description }}</p>
+      
+      <!-- Formatted SQL Query -->
+      <pre style="background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; color: var(--primary);">{{ selected_query.sql }}</pre>
+    </div>
+
+    {% if curated_result and curated_result.rows %}
+      <div style="margin-top: 1rem;">
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">Query Results ({{ curated_result.rows|length }} rows returned)</h4>
+        <div class="table-responsive" style="max-height: 340px; overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                {% for col in curated_result.cols %}
+                  <th>{{ col }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in curated_result.rows %}
+                <tr>
+                  {% for col in curated_result.cols %}
+                    <td>{{ row[col]|human }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<!-- Table & View Browser Layout -->
+<div style="display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start;">
+  <!-- Left Column: Tables & Views Selector -->
+  <div class="card" style="padding: 1rem;">
+    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 0.5rem; padding-left: 0.5rem;">
+      Base Tables ({{ base_tables|length }})
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 1.25rem;">
+      {% for t in table_stats %}
+        {% if not t.is_view %}
+          <a href="{{ url_for('explorer.index', name=t.name) }}" 
+             style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-main); {% if current_name == t.name %}background-color: var(--primary-light); color: var(--primary); font-weight: 700;{% endif %}">
+            <span>{{ t.name }}</span>
+            <span style="font-size: 0.72rem; color: var(--text-subtle);">{{ t.count }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 0.5rem; padding-left: 0.5rem;">
+      SQL Views ({{ views|length }})
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+      {% for v in table_stats %}
+        {% if v.is_view %}
+          <a href="{{ url_for('explorer.index', name=v.name) }}" 
+             style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-main); {% if current_name == v.name %}background-color: var(--accent-cyan-light); color: var(--accent-cyan); font-weight: 700;{% endif %}">
+            <span>{{ v.name }}</span>
+            <span style="font-size: 0.72rem; color: var(--text-subtle);">{{ v.count }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Right Column: Schema Inspector & Table Records -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Active Table Schema Header -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="badge {{ 'badge-info' if is_view else 'badge-primary' }}">
+            {{ 'SQL VIEW' if is_view else 'BASE TABLE' }}
+          </span>
+          <h2 class="card-title" style="display: inline; margin-left: 0.5rem; font-family: var(--font-mono);">
+            {{ current_name }}
+          </h2>
+        </div>
+        <div>
+          <strong>{{ total_rows }}</strong> Total Records
+        </div>
+      </div>
+
+      <!-- Column Definitions Table -->
+      <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem;">
+        Schema Structure (information_schema)
+      </h4>
+      <div class="table-responsive" style="margin-bottom: 1.5rem;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Column Name</th>
+              <th>Data Type</th>
+              <th>Nullable</th>
+              <th>Key</th>
+              <th>Default</th>
+              <th>Extra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for col in columns_info %}
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700;">{{ col.column_name }}</td>
+                <td style="color: var(--primary); font-family: var(--font-mono); font-size: 0.8rem;">{{ col.data_type }}</td>
+                <td>{{ col.is_nullable }}</td>
+                <td>
+                  {% if col.column_key == 'PRI' %}
+                    <span class="badge badge-primary">PRIMARY</span>
+                  {% elif col.column_key == 'UNI' %}
+                    <span class="badge badge-info">UNIQUE</span>
+                  {% elif col.column_key == 'MUL' %}
+                    <span class="badge badge-secondary">INDEX</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">{{ col.column_default|human }}</td>
+                <td style="font-size: 0.75rem; color: var(--text-subtle);">{{ col.extra or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Live Records Browser -->
+      <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem;">
+        Records Browser (Showing page {{ page }})
+      </h4>
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              {% for col in cols %}
+                <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                {% for col in cols %}
+                  <td>{{ row[col]|human }}</td>
+                {% endfor %}
+              </tr>
+            {% else %}
+              <tr><td colspan="{{ cols|length }}" style="text-align: center; color: var(--text-muted); padding: 2rem;">No records found in this table.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

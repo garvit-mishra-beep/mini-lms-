@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found — 404{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 580px; margin: 3rem auto; text-align: center; padding: 3rem 2rem;">
+  <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
+  <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">404 — Record or Page Not Found</h1>
+  <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+    The requested course, student, quiz, or table entity could not be located in the current database schema.
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

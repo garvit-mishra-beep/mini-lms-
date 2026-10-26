@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }} — Student Profile{% endblock %}
+{% block header_title %}Student Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">Roll No: {{ student.roll_no }}</span>
+      <span class="badge {{ 'badge-success' if student.status == 'ACTIVE' else 'badge-danger' }}">{{ student.status }}</span>
+    </div>
+    <h1 class="page-title">{{ student.full_name }}</h1>
+    <p class="page-subtitle">{{ student.email }} &bull; Enrollment No: {{ student.enrollment_no }}</p>
+  </div>
+  <div class="page-actions">
+    {% if current_user.is_admin %}
+      <form method="POST" action="{{ url_for('students.toggle_status', student_id=student.student_id) }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn {{ 'btn-danger' if student.status == 'ACTIVE' else 'btn-success' }} btn-sm">
+          {{ 'Deactivate Account' if student.status == 'ACTIVE' else 'Activate Account' }}
+        </button>
+      </form>
+    {% endif %}
+    <a href="{{ url_for('students.index') }}" class="btn btn-secondary btn-sm">← Back to Directory</a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; align-items: start;">
+  <!-- Left Column: Student Metadata Details -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Student Information</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.88rem;">
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Full Name</div>
+        <div style="font-weight: 600;">{{ student.full_name }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Email Address</div>
+        <div>{{ student.email }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Roll Number</div>
+        <div style="font-family: var(--font-mono); font-weight: 600;">{{ student.roll_no }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Enrollment Number</div>
+        <div style="font-family: var(--font-mono);">{{ student.enrollment_no }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Phone</div>
+        <div>{{ student.phone or 'Not provided' }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Date of Birth</div>
+        <div>{{ student.dob|date_fmt if student.dob else 'Not provided' }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Member Since</div>
+        <div>{{ student.created_at|date_fmt }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Student Enrollments & Academic Records -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Enrolled Courses & Academic Records</h2>
+      <span class="badge badge-primary">{{ student.enrollments|length }} Courses</span>
+    </div>
+
+    {% if student.enrollments %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Enrolled Date</th>
+              <th>Status</th>
+              <th>Completion</th>
+              <th>Final Grade</th>
+              <th>Certificate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in student.enrollments %}
+              <tr>
+                <td>
+                  <strong>{{ e.course_code }}</strong>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">{{ e.course_title }}</div>
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.8rem;">{{ e.enrolled_at|date_fmt }}</td>
+                <td><span class="badge {{ e.status|status_badge }}">{{ e.status }}</span></td>
+                <td>
+                  <span class="badge {{ 'badge-success' if e.completion_status == 'COMPLETED' else 'badge-warning' }}">
+                    {{ e.completion_status or 'IN_PROGRESS' }}
+                  </span>
+                </td>
+                <td>
+                  {% if e.final_score is not none %}
+                    <strong>{{ e.final_score }}%</strong> ({{ e.letter_grade }})
+                  {% else %}
+                    <span style="color: var(--text-muted);">In Progress</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.certificate_code %}
+                    <a href="{{ url_for('certificates.view_certificate', certificate_code=e.certificate_code) }}" class="badge badge-success" style="text-decoration: none;">
+                      📜 View Certificate
+                    </a>
+                  {% else %}
+                    <span style="color: var(--text-subtle); font-size: 0.78rem;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+        <p>This student is not enrolled in any courses yet.</p>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('enrollments.index') }}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;">Create Enrollment</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

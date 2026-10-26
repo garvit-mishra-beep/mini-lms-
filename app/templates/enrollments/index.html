@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Enrollment Management — MiniLMS{% endblock %}
+{% block header_title %}Enrollments{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Enrollment Management</h1>
+    <p class="page-subtitle">Atomic course enrollment transactions, duplicate checks, and completion lifecycle.</p>
+  </div>
+</div>
+
+<!-- Enrollment Action Form -->
+<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+  <div class="card-header">
+    <h2 class="card-title">⚡ Process New Course Enrollment</h2>
+    <span class="badge badge-primary">Atomic sp_enroll</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('enrollments.index') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: flex-end;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% if not current_user.is_student %}
+    <div class="form-group" style="margin-bottom: 0;">
+      <label class="form-label" for="student_id">Select Student *</label>
+      <select id="student_id" name="student_id" class="form-select" required>
+        <option value="">Choose an active student...</option>
+        {% for s in students %}
+          <option value="{{ s.student_id }}">
+            {{ s.full_name }} (Roll: {{ s.roll_no }}) {% if s.status != 'ACTIVE' %}[INACTIVE]{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="form-group" style="margin-bottom: 0;">
+      <label class="form-label" for="course_id">Select Course *</label>
+      <select id="course_id" name="course_id" class="form-select" required>
+        <option value="">Choose a published course...</option>
+        {% for c in courses %}
+          <option value="{{ c.course_id }}">{{ c.course_code }} — {{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        Execute sp_enroll
+      </button>
+    </div>
+  </form>
+  <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">
+    🛡️ Enforces: Active student verification &bull; Published course check &bull; Row-level locking &bull; Unique partial key constraint <code>(student_id, active_course_id)</code>.
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+  <form method="GET" action="{{ url_for('enrollments.index') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 250px;">
+      <input type="text" name="search" class="form-control" placeholder="Search by student name, roll number, or course code..." value="{{ search }}">
+    </div>
+    <div style="width: 170px;">
+      <select name="status" class="form-select" onchange="this.form.submit()">
+        <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Statuses</option>
+        <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+        <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+        <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    {% if search or status_filter != 'ALL' %}
+      <a href="{{ url_for('enrollments.index') }}" class="btn btn-secondary" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Enrollments Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Enrollment ID</th>
+          <th>Student</th>
+          <th>Course</th>
+          <th>Enrolled Date</th>
+          <th>Status</th>
+          <th>Completion</th>
+          <th>Grade</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in enrollments %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">#{{ e.enrollment_id }}</td>
+            <td>
+              <a href="{{ url_for('students.profile', student_id=e.student_id) }}">
+                <strong>{{ e.student_name }}</strong>
+              </a>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Roll: {{ e.roll_no }}</div>
+            </td>
+            <td>
+              <strong>{{ e.course_code }}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ e.course_title }}</div>
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">{{ e.enrolled_at|date_fmt }}</td>
+            <td>
+              <span class="badge {{ e.status|status_badge }}">{{ e.status }}</span>
+            </td>
+            <td>
+              <span class="badge {{ 'badge-success' if e.completion_status == 'COMPLETED' else 'badge-warning' }}">
+                {{ e.completion_status or 'IN_PROGRESS' }}
+              </span>
+            </td>
+            <td>
+              {% if e.final_score is not none %}
+                <strong>{{ e.final_score }}%</strong> ({{ e.letter_grade }})
+              {% else %}
+                <span style="color: var(--text-subtle);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.4rem;">
+                <a href="{{ url_for('enrollments.detail', enrollment_id=e.enrollment_id) }}" class="btn btn-secondary btn-sm">
+                  Details
+                </a>
+                {% if e.status == 'ACTIVE' %}
+                  <form method="POST" action="{{ url_for('enrollments.cancel', enrollment_id=e.enrollment_id) }}" style="display: inline;" data-confirm="Cancel this active enrollment?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); font-size: 0.75rem;">Cancel</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No enrollment records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

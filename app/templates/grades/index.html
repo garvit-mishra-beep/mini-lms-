@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Grades & Academic Reports — MiniLMS{% endblock %}
+{% block header_title %}Gradebook & Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gradebook & Academic Standing</h1>
+    <p class="page-subtitle">Powered by SQL views <code>v_student_grades</code>, <code>v_quiz_performance</code>, and <code>v_course_completion</code>.</p>
+  </div>
+</div>
+
+<!-- Student View: My Grades (if logged in as student) -->
+{% if my_grades is defined %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">My Official Grades</h2>
+    <span class="badge badge-primary">Student Academic Record</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Final Score</th>
+          <th>Letter Grade</th>
+          <th>Status</th>
+          <th>Published Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in my_grades %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">{{ g.course_code }}</td>
+            <td><strong>{{ g.course_title }}</strong></td>
+            <td><strong>{{ g.final_score }}%</strong></td>
+            <td><span class="badge badge-primary" style="font-size: 0.9rem;">{{ g.letter_grade }}</span></td>
+            <td><span class="badge {{ 'badge-success' if g.published else 'badge-warning' }}">{{ 'Official' if g.published else 'Draft' }}</span></td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">{{ g.published_at|date_fmt if g.published_at else 'Pending' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No published grades found for your enrollments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Full Gradebook with Procedure Publish & Correction (for Faculty & Admin) -->
+{% if current_user.is_admin or current_user.is_teacher %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">Course Gradebook (Published & Pending)</h2>
+    <span class="badge badge-secondary">sp_publish_grade & sp_correct_published_grade</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Student Name</th>
+          <th>Roll No</th>
+          <th>Score</th>
+          <th>Grade</th>
+          <th>Published</th>
+          <th>Completion</th>
+          <th>Faculty Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in detailed_grades %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 600;">{{ d.course_code }}</td>
+            <td><strong>{{ d.student_name }}</strong></td>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ d.roll_no }}</td>
+            <td><strong>{{ d.final_score }}%</strong></td>
+            <td><span class="badge badge-primary">{{ d.letter_grade }}</span></td>
+            <td>
+              <span class="badge {{ 'badge-success' if d.published else 'badge-warning' }}">
+                {{ 'Published' if d.published else 'Pending' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge {{ 'badge-success' if d.completion_status == 'COMPLETED' else 'badge-warning' }}">
+                {{ d.completion_status or 'IN_PROGRESS' }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openCorrectionModal('{{ d.grade_id }}', '{{ d.student_name }}', '{{ d.final_score }}')">
+                ✏️ Correct Grade
+              </button>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No grade records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Grade Correction Modal -->
+<div id="correction-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="max-width: 480px; width: 90%; background: var(--bg-surface);">
+    <div class="card-header">
+      <h3 class="card-title">Authorized Grade Correction</h3>
+      <button type="button" onclick="closeCorrectionModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="correction-form" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Updates published grade via stored procedure <code>sp_correct_published_grade</code> and logs changes into <code>grade_change_history</code>.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Student</label>
+        <input type="text" id="modal-student-name" class="form-control" readonly style="background: var(--bg-subtle);">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modal-score">New Corrected Score (0-100) *</label>
+        <input type="number" step="0.01" min="0" max="100" id="modal-score" name="final_score" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modal-reason">Reason for Correction (Audited) *</label>
+        <input type="text" id="modal-reason" name="reason" class="form-control" placeholder="e.g. Recount of Assignment 2 marks" required>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" onclick="closeCorrectionModal()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary">Apply sp_correct_published_grade</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- SQL View Spotlights: Quiz Performance & Course Completion -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Quiz Performance Overview</h2>
+      <span class="badge badge-secondary" style="font-family: var(--font-mono); font-size: 0.68rem;">v_quiz_performance</span>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Quiz Title</th>
+            <th>Submissions</th>
+            <th>Average</th>
+            <th>Max Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in quiz_performance %}
+            <tr>
+              <td><strong>{{ q.title }}</strong></td>
+              <td>{{ q.submissions }}</td>
+              <td><strong>{{ q.average_score or '—' }}</strong></td>
+              <td>{{ q.max_score }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Course Completion Aggregation</h2>
+      <span class="badge badge-secondary" style="font-family: var(--font-mono); font-size: 0.68rem;">v_course_completion</span>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>With Completion Record</th>
+            <th>Completed Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in completions %}
+            <tr>
+              <td><strong>{{ c.course_code }}</strong></td>
+              <td>{{ c.enrollments_with_completion_record }}</td>
+              <td><span class="badge badge-success">{{ c.completed_count or 0 }} Completed</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function openCorrectionModal(gradeId, studentName, currentScore) {
+  const modal = document.getElementById('correction-modal');
+  const form = document.getElementById('correction-form');
+  form.action = `/grades/correct/${gradeId}`;
+  document.getElementById('modal-student-name').value = studentName;
+  document.getElementById('modal-score').value = currentScore;
+  modal.style.display = 'flex';
+}
+function closeCorrectionModal() {
+  document.getElementById('correction-modal').style.display = 'none';
+}
+</script>
+{% endblock %}

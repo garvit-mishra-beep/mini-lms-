@@ -1,0 +1,47 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+
+# Database backups and dumps containing real/sensitive data
+database/backup/
+*.sql.bak
+*.dump
+backup/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+tests/.cache/
+
+# Archives and build artifacts
+*.zip
+*.tar.gz
+*.rar
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# System and logs
+*.log
+.system_generated/
+.DS_Store
+Thumbs.db
+desktop.ini

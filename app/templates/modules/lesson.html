@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }} — Lesson #{{ lesson.sequence_no }}{% endblock %}
+{% block header_title %}Lesson Viewer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem;">
+      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">{{ lesson.course_code }}</span>
+      <span class="breadcrumb-sep">&bull;</span>
+      <span style="color: var(--text-muted); font-size: 0.88rem;">{{ lesson.module_title }}</span>
+      <span class="badge badge-secondary">Lesson {{ lesson.sequence_no }}</span>
+    </div>
+    <h1 class="page-title">{{ lesson.title }}</h1>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('courses.detail', course_id=lesson.course_id) }}" class="btn btn-secondary btn-sm">← Back to Course</a>
+    {% if current_user.is_student and enrollment %}
+      {% if is_completed %}
+        <span class="badge badge-success" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          ✓ Completed
+        </span>
+      {% else %}
+        <form method="POST" action="{{ url_for('modules.mark_lesson_complete', lesson_id=lesson.lesson_id) }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-success btn-sm">✓ Mark Lesson as Completed</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1.5rem; align-items: start;">
+  <!-- Lesson Text & Media Content -->
+  <div class="card" style="padding: 2rem;">
+    <div style="font-size: 1rem; line-height: 1.7; color: var(--text-main); white-space: pre-wrap;">{{ lesson.content_text or 'No written lecture content provided for this lesson yet.' }}</div>
+  </div>
+
+  <!-- Prerequisites & Linked Quiz Sidebar -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    {% if lesson.quiz_id %}
+    <div class="card" style="border-left: 4px solid var(--warning);">
+      <div class="card-header">
+        <h2 class="card-title">Attached Quiz</h2>
+        <span class="badge badge-warning">Required</span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Complete the understanding assessment for this lesson.
+      </p>
+      <a href="{{ url_for('quizzes.view_quiz', quiz_id=lesson.quiz_id) }}" class="btn btn-primary btn-sm" style="width: 100%;">
+        ✍️ Open Quiz: {{ lesson.quiz_title }}
+      </a>
+    </div>
+    {% endif %}
+
+    {% if prerequisites %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Prerequisites</h2>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+        {% for p in prerequisites %}
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>🔒</span>
+            <a href="{{ url_for('modules.view_lesson', lesson_id=p.prerequisite_lesson_id) }}">{{ p.prerequisite_title }}</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Lesson Rules</h2>
+      </div>
+      <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; color: var(--text-muted);">
+        <div><strong>Restricted:</strong> {{ 'Yes (Enforces Prerequisites)' if lesson.is_restricted else 'No' }}</div>
+        <div><strong>Mandatory:</strong> {{ 'Yes (Required for Course Completion)' if lesson.required_for_completion else 'No' }}</div>
+        {% if lesson.release_date %}
+          <div><strong>Release Date:</strong> {{ lesson.release_date|date_fmt }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

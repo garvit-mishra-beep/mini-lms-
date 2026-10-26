@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}System Settings & Diagnostics — MiniLMS{% endblock %}
+{% block header_title %}Settings & Diagnostics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">System Settings & Database Health</h1>
+    <p class="page-subtitle">Server telemetry, applied schema migrations, and academic development configuration.</p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- MySQL Server Diagnostics -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">MySQL Server Telemetry</h2>
+      <span class="badge badge-success">Connected</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.88rem;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">MySQL Engine Version:</span>
+        <strong style="font-family: var(--font-mono);">{{ server_info.mysql_version }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Database Schema:</span>
+        <strong style="font-family: var(--font-mono); color: var(--primary);">{{ server_info.current_db }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Database User:</span>
+        <span style="font-family: var(--font-mono);">{{ server_info.db_user }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Database Time:</span>
+        <span>{{ server_info.db_time }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Timezone:</span>
+        <span>{{ server_info.timezone }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schema Inventory Counts -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Schema Inventory</h2>
+      <span class="badge badge-secondary">minilms_db</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
+      <div style="background-color: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">{{ table_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Base Tables</div>
+      </div>
+      <div style="background-color: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent-cyan);">{{ view_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">SQL Views</div>
+      </div>
+      <div style="background-color: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--warning);">{{ routine_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Stored Procedures</div>
+      </div>
+      <div style="background-color: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--success);">{{ trigger_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Triggers</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Applied Migrations Log -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Applied Schema Migrations (schema_versions)</h2>
+    <span class="badge badge-primary">{{ schema_versions|length }} Migrations</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Description</th>
+          <th>Applied Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in schema_versions %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700;">v{{ v.version_no }}</td>
+            <td><strong>{{ v.description }}</strong></td>
+            <td style="color: var(--text-muted); font-size: 0.82rem;">{{ v.applied_at|date_fmt }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
