@@ -191,9 +191,9 @@ WHERE u.is_active = 1;
 
 ---
 
-## Application Screenshots
+## Core Application Workflows
 
-Interface captures illustrating the primary stakeholder workflows are available in [assets/screenshots/](assets/screenshots/):
+MiniLMS organizes academic operations across five interconnected workflows:
 
 | Workflow | Description | Target Role |
 | :--- | :--- | :---: |
@@ -263,7 +263,7 @@ PORT=5000
 ### 3. Run Automated Migrations
 Apply baseline schema and all incremental migration scripts (`v001` through `v012`):
 ```bash
-python scripts/run_migrations.py
+python database/migrate.py
 ```
 
 ### 4. Seed Demo Credentials
@@ -302,14 +302,13 @@ docker-compose -f deployment/docker-compose.yml up -d --build
 ```
 
 ### Option 2: Production WSGI Server
-**On Windows (Waitress):**
+Run with Gunicorn (Linux/macOS) or Waitress (Windows):
 ```bash
-python run_production.py
-```
-
-**On Linux (Gunicorn):**
-```bash
+# Linux / macOS (Gunicorn)
 gunicorn --workers 4 --bind 0.0.0.0:5000 wsgi:application
+
+# Windows (Waitress)
+waitress-serve --port=5000 wsgi:application
 ```
 
 ---
@@ -320,74 +319,48 @@ gunicorn --workers 4 --bind 0.0.0.0:5000 wsgi:application
 MiniLMS/
 ├── app/                        # Flask application source
 │   ├── auth/                   # Authentication & RBAC decorators
-│   ├── routes/                 # 18 Modular domain Blueprints
+│   ├── routes/                 # 19 Modular domain Blueprints
 │   ├── services/               # Core business logic services
-│   ├── static/                 # CSS & JavaScript assets
+│   ├── static/                 # CSS & JavaScript client assets
 │   ├── templates/              # Jinja2 presentation templates
 │   ├── config.py               # Twelve-factor configuration
 │   ├── db.py                   # PyMySQL connection pool & transaction manager
 │   └── __init__.py             # Application factory
 │
 ├── database/                   # Database engineering scripts
-│   ├── schema/                 # Baseline DDL schema
-│   ├── migrations/             # Incremental migrations (v001 - v012)
-│   ├── rollback/               # Versioned rollback scripts
-│   ├── procedures/             # 11 Stored procedure DDLs
-│   ├── functions/              # 2 Stored function DDLs
-│   ├── triggers/               # 23 Database trigger DDLs
-│   ├── views/                  # 14 Relational view DDLs
-│   ├── indexes/                # Workload performance index definitions
+│   ├── schema/                 # Master relational DDL schema
+│   │   └── schema.sql
+│   ├── migrations/             # Incremental versioned migrations (v006 - v012)
 │   ├── queries/                # Advanced 25-query SQL portfolio
-│   ├── security/               # Database user roles & privileges
-│   ├── seed/                   # Synthetic data seeding scripts
-│   ├── monitoring/             # Production performance & lock monitor queries
-│   └── demonstrations/         # ACID isolation & concurrency demos
-│
-├── scripts/                    # Operational automation & DevOps utilities
-│   ├── setup_database.py       # Turnkey database provisioner
-│   ├── run_migrations.py       # Forward migration runner
-│   ├── generate_benchmark_data.py # High-scale synthetic data generator
-│   ├── profile_database.py     # Database profiling & table statistics
-│   ├── validate_data_quality.py # Schema & referential integrity auditor
-│   ├── run_benchmarks.py       # Query latency benchmark runner
-│   ├── run_health_checks.py    # Runtime health & connectivity checks
-│   ├── backup_database.py      # Logical backup generator
-│   ├── restore_database.py     # Disaster recovery drill runner
-│   ├── verify_backup.py        # Checksum & backup validation utility
-│   └── setup_benchmark_db.py   # Benchmark database initializer
+│   │   └── queries.sql
+│   ├── security/               # Database user roles, privileges & restricted views
+│   ├── migrate.py              # Automated migration execution engine
+│   └── seed_passwords.py       # Cryptographic password generator & role seeder
 │
 ├── deployment/                 # Production deployment configuration
-│   ├── Dockerfile              # Container specification
-│   ├── docker-compose.yml      # Multi-container orchestration
+│   ├── Dockerfile              # Security-hardened container specification
+│   ├── docker-compose.yml      # Multi-container orchestration (Web + MySQL 8.0)
 │   ├── nginx.conf              # Reverse proxy configuration
-│   └── systemd/                # Linux systemd service unit
+│   ├── systemd/                # Linux systemd service unit
+│   └── README.md               # Infrastructure deployment manual
 │
-├── docs/                       # Public technical documentation
+├── docs/                       # Technical architecture & design documentation
 │   ├── ARCHITECTURE.md         # Multi-tier system architecture
 │   ├── DATABASE_DESIGN.md      # Schema specifications & BCNF proofs
 │   ├── INSTALLATION.md         # Detailed installation guide
-│   ├── SECURITY.md             # Security architecture & RBAC
-│   └── diagrams/               # Architecture, ER & entity lifecycle diagrams
-│
-├── benchmarks/                 # Workload performance benchmarking
-│   └── load-tests/             # Multi-threaded concurrent request harness
-│
-├── assets/                     # Visual assets & screenshots
-│   └── screenshots/            # Workflow screen captures
+│   └── SECURITY.md             # Security architecture & RBAC
 │
 ├── .github/                    # CI/CD configuration
 │   └── workflows/smoke_test.yml # GitHub Actions code quality workflow
 │
 ├── .env.example                # Template environment variables
 ├── .gitignore                  # Git exclusion rules
-├── .gitattributes              # Git line ending normalizations
-├── .editorconfig               # Consistent IDE indentation settings
+├── LICENSE                     # MIT Open Source License
+├── README.md                   # Project documentation
 ├── requirements.txt            # Python dependencies
 ├── run.py                      # Flask development entry point
-├── wsgi.py                     # WSGI standard callable
-├── run_production.py           # Production WSGI server launcher
-├── README.md                   # Project documentation
-├── CHANGELOG.md                # Version release notes
+└── wsgi.py                     # WSGI standard callable
+```
 ├── SECURITY.md                 # Security advisory policy
 └── LICENSE                     # MIT Open Source License
 ```

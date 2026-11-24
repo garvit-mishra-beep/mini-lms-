@@ -40,6 +40,7 @@ credentials/
 /docs/requirements/
 /docs/data/
 /docs/design/
+/docs/diagrams/
 
 # Private automated tests and generated evidence
 /tests/
@@ -55,18 +56,43 @@ coverage.xml
 test-results/
 test-reports/
 
-# Benchmark output
-/benchmarks/results/
-/benchmarks/execution-plans/
-/benchmarks/logs/
+# Benchmark output and local harnesses
+/benchmarks/
+/assets/
 
-# Database backups and generated dumps
+# Operational scripts (retained locally)
+/scripts/
+
+# Local database engineering demos, extracts, and rollbacks
+database/__init__.py
+database/queries/__init__.py
 /database/backup/
 /database/backups/
 /database/dumps/
+/database/demonstrations/
+/database/monitoring/
+/database/rollback/
+/database/functions/
+/database/procedures/
+/database/triggers/
+/database/views/
+/database/indexes/
+/database/seed/
+/database/queries/execute_portfolio.py
+/database/security/privilege_validation.sql
+/database/migrations/apply_v011.py
 *.sql.gz
 *.dump
 *.bak
+
+# Local redundant execution runners & configs
+app.py
+run_production.py
+start_windows.bat
+CHANGELOG.md
+SECURITY.md
+.editorconfig
+.gitattributes
 
 # Uploaded files
 /uploads/
