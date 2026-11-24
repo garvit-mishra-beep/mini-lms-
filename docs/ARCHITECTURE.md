@@ -7,7 +7,7 @@ MiniLMS is architected as an enterprise-grade, relational academic management an
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        PRESENTATION TIER                               │
-│  - 18 Modular Flask Blueprints (Modular routing & request validation)  │
+│  - 19 Modular Flask Blueprints (Modular routing & request validation)  │
 │  - Semantic Jinja2 Server-Side Templates                               │
 │  - Responsive CSS / Vanilla JS & Chart.js Visualizations              │
 └───────────────────────────────────┬────────────────────────────────────┘

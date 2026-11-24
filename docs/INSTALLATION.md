@@ -15,8 +15,8 @@ Before installing MiniLMS, ensure your system meets the following requirements:
 
 ### 2.1 Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/MiniLMS.git
-cd MiniLMS
+git clone https://github.com/garvit-mishra-beep/mini-lms-.git
+cd mini-lms-
 ```
 
 ### 2.2 Create and Activate a Python Virtual Environment
@@ -72,7 +72,7 @@ FLASK_ENV=development
 Execute the automated migration runner to apply baseline schema and incremental migrations (`v001` through `v012`):
 
 ```bash
-python scripts/run_migrations.py
+python database/migrate.py
 ```
 
 ### 3.4 Seed Demonstration Data & Password Hashes
@@ -96,7 +96,7 @@ Open your browser and navigate to: **http://127.0.0.1:5000**
 ### 4.2 Production Mode (WSGI)
 **On Windows (Waitress):**
 ```bash
-python run_production.py
+waitress-serve --port=5000 wsgi:application
 ```
 
 **On Linux / Docker (Gunicorn):**

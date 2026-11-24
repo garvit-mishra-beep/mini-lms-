@@ -18,7 +18,7 @@ MiniLMS is an enterprise-grade academic management and analytics platform engine
 - [System Architecture](#system-architecture)
 - [Database Architecture](#database-architecture)
 - [Important Database Capabilities](#important-database-capabilities)
-- [Application Screenshots](#application-screenshots)
+- [Core Application Workflows](#core-application-workflows)
 - [Installation & Local Setup](#installation--local-setup)
 - [Database Initialization & Migrations](#database-initialization--migrations)
 - [Application Startup](#application-startup)
@@ -64,7 +64,7 @@ MiniLMS resolves these challenges by anchoring business rules, concurrency locks
 | :--- | :--- | :--- |
 | **Database Engine** | MySQL Server (Community Edition) | 8.0 (InnoDB Engine with ACID & MVCC support) |
 | **Backend Runtime** | Python | 3.10+ (PyMySQL connection driver) |
-| **Web Framework** | Flask | 3.x (18 Modular Blueprints, Jinja2 Templates) |
+| **Web Framework** | Flask | 3.x (19 Modular Blueprints, Jinja2 Templates) |
 | **Authentication** | Flask-Login & Werkzeug | Cryptographic password hashing (bcrypt / scrypt) |
 | **Visualization** | Chart.js | 4.x (Dynamic grade distributions, risk charts) |
 | **DevOps & Containers** | Docker, Gunicorn, Nginx | Multi-stage Dockerfile, docker-compose orchestration |
@@ -96,7 +96,7 @@ MiniLMS is organized according to a decoupled 3-tier architectural model:
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        PRESENTATION TIER                               │
-│  - 18 Modular Flask Blueprints (Domain-driven controller routes)       │
+│  - 19 Modular Flask Blueprints (Domain-driven controller routes)       │
 │  - Semantic Jinja2 Server-Side Templates                               │
 │  - Responsive CSS & Interactive Chart.js Visualizations                │
 └───────────────────────────────────┬────────────────────────────────────┘
@@ -145,7 +145,7 @@ For schema definitions, normalization proofs, and relational diagrams, see [docs
 When concurrent students attempt to enroll in a course offering near maximum capacity, `sp_enroll_student` acquires a row lock:
 
 ```sql
--- Excerpt from database/procedures/sp_enroll_student.sql
+-- Implemented in database/schema/schema.sql & database/migrations/v006_upgrade_sp_enroll.sql
 START TRANSACTION;
 SELECT current_enrolled, max_capacity 
 FROM course_offerings 
@@ -163,7 +163,7 @@ COMMIT;
 Student risk level is computed deterministically inside MySQL:
 
 ```sql
--- Excerpt from database/functions/fn_calculate_risk_score.sql
+-- Implemented in database/schema/schema.sql & database/migrations/v011_academic_risk_engine.sql
 -- Composite score = 40% Attendance deficit + 40% Mark deficit + 20% LMS Inactivity
 SET v_risk_score = (GREATEST(0, (75.0 - p_att_pct)) * 0.40 * (100.0 / 75.0)) +
                    (GREATEST(0, (50.0 - p_avg_marks)) * 0.40 * (100.0 / 50.0)) +
@@ -175,7 +175,7 @@ RETURN LEAST(100.0, GREATEST(0.0, v_risk_score));
 Contact details are masked dynamically for non-privileged directory lookups:
 
 ```sql
--- Excerpt from database/views/v_student_public_directory.sql
+-- Implemented in database/schema/schema.sql & database/migrations/v010_analytical_views_and_stored_programs.sql
 CREATE VIEW v_student_public_directory AS
 SELECT 
     s.student_id,
@@ -214,8 +214,8 @@ MiniLMS organizes academic operations across five interconnected workflows:
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/MiniLMS.git
-cd MiniLMS
+git clone https://github.com/garvit-mishra-beep/mini-lms-.git
+cd mini-lms-
 ```
 
 ### 3. Virtual Environment Setup
@@ -361,9 +361,6 @@ MiniLMS/
 ├── run.py                      # Flask development entry point
 └── wsgi.py                     # WSGI standard callable
 ```
-├── SECURITY.md                 # Security advisory policy
-└── LICENSE                     # MIT Open Source License
-```
 
 ---
 
@@ -398,7 +395,7 @@ The technical baseline of MiniLMS has been independently validated:
 ## Contributing & Security
 
 - Contributions are welcome! Please open an issue or submit a pull request following standard Git feature-branch workflows.
-- For security vulnerabilities, please refer to our [Security Policy](SECURITY.md).
+- For security vulnerabilities, please refer to our [Security Policy](docs/SECURITY.md).
 
 ---
 
