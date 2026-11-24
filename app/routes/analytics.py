@@ -1,8 +1,10 @@
 """Analytics routes providing live chart data directly from SQL aggregations."""
 import json
-from flask import Blueprint, render_template, jsonify
+from datetime import datetime
+from flask import Blueprint, render_template, jsonify, Response, redirect, url_for, flash, request
 from flask_login import login_required
 from app.db import fetch_all, scalar
+from app.services import reporting_service
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -81,4 +83,70 @@ def index():
         kpis=kpis,
         chart_payload=chart_payload,
         chart_json=json.dumps(chart_payload)
+    )
+
+@analytics_bp.route('/reports')
+@login_required
+def reports_catalog():
+    """Browse catalog of all 16 institutional reports."""
+    catalog = reporting_service.get_report_catalog()
+    return render_template('analytics/reports_index.html', active='reports', catalog=catalog)
+
+@analytics_bp.route('/report/<report_id>')
+@login_required
+def view_report(report_id):
+    """View executed institutional report in tabular format."""
+    report_data = reporting_service.execute_report(report_id)
+    if not report_data['headers']:
+        flash(f"Report {report_id} not found or has no columns.", "warning")
+        return redirect(url_for('analytics.reports_catalog'))
+    return render_template('analytics/report_view.html', active='reports', report=report_data)
+
+@analytics_bp.route('/report/<report_id>/export')
+@login_required
+def export_report(report_id):
+    """Export report as RFC 4180 CSV document."""
+    csv_content = reporting_service.generate_report_csv(report_id)
+    filename = f"MiniLMS_{report_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_content,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@analytics_bp.route('/executive')
+@login_required
+def executive_dashboard():
+    """Master Executive Leadership Dashboard with multi-dimensional Chart.js visualizations."""
+    dept_stats = fetch_all("SELECT * FROM v_department_performance")
+    capacity_stats = fetch_all("SELECT * FROM v_course_offering_summary ORDER BY capacity_utilization_pct DESC")
+    workload_stats = fetch_all("SELECT * FROM v_faculty_workload")
+    
+    # Executive KPIs
+    exec_kpis = {
+        'total_students': scalar("SELECT COUNT(*) FROM students"),
+        'avg_cgpa': scalar("SELECT ROUND(AVG(cgpa), 2) FROM students"),
+        'capacity_utilization': scalar("SELECT ROUND(AVG((enrolled_count * 100.0) / NULLIF(max_capacity, 0)), 1) FROM course_offerings"),
+        'retention_pct': scalar("SELECT ROUND((SUM(CASE WHEN status='ACTIVE' THEN 1 ELSE 0 END)*100.0)/COUNT(*), 1) FROM enrollments"),
+        'avg_attendance': scalar("SELECT ROUND(AVG(total_attendance_pct), 1) FROM enrollments WHERE status='ACTIVE'"),
+        'published_grades': scalar("SELECT COUNT(*) FROM grades WHERE published = 1")
+    }
+
+    # Chart payload for executive visualizations
+    exec_charts = {
+        'dept_labels': [r['department_code'] for r in dept_stats],
+        'dept_cgpa': [float(r['dept_avg_cgpa'] or 0) for r in dept_stats],
+        'dept_students': [int(r['total_students'] or 0) for r in dept_stats],
+        'cap_labels': [f"{r['course_code']} ({r['section_name']})" for r in capacity_stats],
+        'cap_util': [float(r['capacity_utilization_pct'] or 0) for r in capacity_stats],
+        'work_labels': [r['full_name'] for r in workload_stats],
+        'work_credits': [float(r['total_teaching_credits'] or 0) for r in workload_stats]
+    }
+
+    return render_template(
+        'analytics/executive_dashboard.html',
+        active='executive',
+        kpis=exec_kpis,
+        charts_json=json.dumps(exec_charts),
+        capacity_stats=capacity_stats
     )

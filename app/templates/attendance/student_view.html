@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block header_title %}My Attendance Records{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">📅 My Lecture Attendance Record</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Official attendance status across registered course offerings. A minimum of 75% attendance is mandatory to appear for semester examinations.
+  </p>
+</div>
+
+<!-- Attendance Course Cards -->
+<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+  {% for c in courses_attendance %}
+  <div class="card" style="margin: 0; border-top: 4px solid {% if c.total_attendance_pct < 75.0 %}#ef4444{% elif c.total_attendance_pct < 85.0 %}#f59e0b{% else %}#10b981{% endif %};">
+    <div class="card-body">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+        <div>
+          <span class="badge badge-secondary" style="font-size: 0.7rem;">Sec {{ c.section_name }}</span>
+          <h3 style="margin: 0.35rem 0 0 0; font-size: 1.05rem;">{{ c.course_code }}</h3>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">{{ c.course_title }}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.35rem; font-weight: 700; color: {% if c.total_attendance_pct < 75.0 %}#ef4444{% elif c.total_attendance_pct < 85.0 %}#f59e0b{% else %}#10b981{% endif %};">
+            {{ c.total_attendance_pct }}%
+          </div>
+          <small class="text-muted">{{ c.attended_sessions }} / {{ c.total_sessions }} Lectures</small>
+        </div>
+      </div>
+
+      <!-- Attendance Visual Progress Bar -->
+      <div style="background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem;">
+        <div style="background: {% if c.total_attendance_pct < 75.0 %}#ef4444{% elif c.total_attendance_pct < 85.0 %}#f59e0b{% else %}#10b981{% endif %}; height: 100%; width: {{ [c.total_attendance_pct, 100]|min }}%;"></div>
+      </div>
+
+      {% if c.total_attendance_pct < 75.0 %}
+      <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.78rem; display: flex; align-items: center; gap: 0.4rem;">
+        <span>⚠️</span>
+        <span>Attendance below 75% threshold. Risk of debarment from exam.</span>
+      </div>
+      {% else %}
+      <div style="color: #10b981; font-size: 0.78rem; display: flex; align-items: center; gap: 0.3rem;">
+        <span>✅</span>
+        <span>Eligible for end-semester assessment.</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-body text-center text-muted" style="padding: 2rem;">
+      You are not actively enrolled in any courses for this term.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Recent Roll Call Timeline -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title" style="margin: 0; font-size: 1rem;">Recent Roll-Call History</h3>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Course</th>
+            <th>Topic Covered</th>
+            <th>Status</th>
+            <th>Remarks</th>
+            <th>Recorded At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_records %}
+          <tr>
+            <td><strong>{{ r.session_date }}</strong></td>
+            <td><code>{{ r.course_code }}</code></td>
+            <td>{{ r.topic_covered }}</td>
+            <td>
+              <span class="badge badge-{{ 'success' if r.status == 'PRESENT' else ('error' if r.status == 'ABSENT' else ('warning' if r.status == 'LATE' else 'info')) }}">
+                {{ r.status }}
+              </span>
+            </td>
+            <td><small class="text-muted">{{ r.remarks or '—' }}</small></td>
+            <td><small class="text-muted">{{ r.marked_at }}</small></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted" style="padding: 1.5rem;">No recent roll call records.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

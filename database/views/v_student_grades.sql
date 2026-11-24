@@ -1,0 +1,3 @@
+-- Relational View: v_student_grades
+-- MiniLMS Database Engineering
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_grades` AS select `u`.`full_name` AS `full_name`,`c`.`course_code` AS `course_code`,`g`.`final_score` AS `final_score`,`g`.`letter_grade` AS `letter_grade`,`g`.`published` AS `published` from ((((`grades` `g` join `enrollments` `e` on((`e`.`enrollment_id` = `g`.`enrollment_id`))) join `students` `s` on((`s`.`student_id` = `e`.`student_id`))) join `users` `u` on((`u`.`user_id` = `s`.`user_id`))) join `courses` `c` on((`c`.`course_id` = `e`.`course_id`)));

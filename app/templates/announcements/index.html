@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block header_title %}Announcements & Circulars{% endblock %}
+
+{% block content %}
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h2 style="margin: 0; font-size: 1.25rem;">📢 Campus &amp; Academic Course Announcements</h2>
+    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+      Official administrative circulars, examination schedules, and course notifications.
+    </p>
+  </div>
+  {% if not current_user.is_student %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('new-ann-modal').style.display='flex'">
+    + Post Announcement
+  </button>
+  {% endif %}
+</div>
+
+<!-- Announcements Feed -->
+<div style="display: flex; flex-direction: column; gap: 1rem;">
+  {% for ann in announcements %}
+  <div class="card" style="margin: 0;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+          {% if ann.offering_id %}
+            <span class="badge badge-info">{{ ann.course_code }} (Sec {{ ann.section_name }})</span>
+          {% else %}
+            <span class="badge badge-primary">Campus-Wide</span>
+          {% endif %}
+          <span style="font-size: 0.78rem; color: var(--text-muted);">
+            Posted by <strong>{{ ann.author_name }}</strong> ({{ ann.author_role }}) &bull; {{ ann.created_at }}
+          </span>
+        </div>
+        <h3 class="card-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">{{ ann.title }}</h3>
+      </div>
+      {% if current_user.is_admin or current_user.is_coordinator or ann.author_name == current_user.full_name %}
+      <form method="POST" action="{{ url_for('announcements.delete', announcement_id=ann.announcement_id) }}" onsubmit="return confirm('Delete this announcement?')">
+        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+        <button type="submit" class="btn btn-secondary btn-sm" style="color: #ef4444; padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+          Delete
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    <div class="card-body" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap;">
+{{ ann.content }}
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body text-center text-muted" style="padding: 2.5rem;">
+      No announcements published yet.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Modal for New Announcement -->
+{% if not current_user.is_student %}
+<div id="new-ann-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 520px; margin: 1rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">Publish Announcement</h3>
+      <button type="button" onclick="document.getElementById('new-ann-modal').style.display='none'" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('announcements.create') }}">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Title / Subject</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g., Mid-Semester Examination Schedule" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Scope / Course Section</label>
+          <select name="offering_id" class="form-control">
+            {% if current_user.is_admin or current_user.is_coordinator %}
+            <option value="">Campus-Wide / All Students</option>
+            {% endif %}
+            {% for o in offerings %}
+            <option value="{{ o.offering_id }}">{{ o.course_code }} — Sec {{ o.section_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Announcement Content</label>
+          <textarea name="content" rows="5" class="form-control" placeholder="Write announcement details..." required></textarea>
+        </div>
+      </div>
+      <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('new-ann-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Post Announcement</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

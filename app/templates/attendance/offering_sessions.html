@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block header_title %}Attendance Sessions — {{ offering.course_code }}{% endblock %}
+
+{% block content %}
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h2 style="margin: 0; font-size: 1.25rem;">{{ offering.course_code }} — {{ offering.course_title }}</h2>
+    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+      Section {{ offering.section_name }} &bull; {{ offering.term_name }} &bull; {{ offering.enrolled_count }} Enrolled Students
+    </p>
+  </div>
+  {% if current_user.is_teacher or current_user.is_admin %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('new-session-modal').style.display='flex'">
+    + Record New Lecture Session
+  </button>
+  {% endif %}
+</div>
+
+<!-- Sessions Table -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title" style="margin: 0; font-size: 1rem;">Conducted Lecture Sessions</h3>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Topic Covered</th>
+            <th>Faculty Instructor</th>
+            <th>Attendance Tally</th>
+            <th>Recorded At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td><strong>{{ s.session_date }}</strong></td>
+            <td>{{ s.topic_covered }}</td>
+            <td>{{ s.teacher_name }}</td>
+            <td>
+              <span class="badge badge-success" title="Present">{{ s.present_count or 0 }} Present</span>
+              <span class="badge badge-error" title="Absent">{{ s.absent_count or 0 }} Absent</span>
+              {% if s.late_count %}
+              <span class="badge badge-warning" title="Late">{{ s.late_count }} Late</span>
+              {% endif %}
+            </td>
+            <td><small class="text-muted">{{ s.created_at }}</small></td>
+            <td>
+              <a href="{{ url_for('attendance.session_roll_call', session_id=s.session_id) }}" class="btn btn-secondary btn-sm">
+                Roll Call Sheet &rarr;
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No lecture sessions recorded yet. Click above to record one.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for New Session -->
+<div id="new-session-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 480px; margin: 1rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">Record Lecture Attendance Session</h3>
+      <button type="button" onclick="document.getElementById('new-session-modal').style.display='none'" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('attendance.create_session', offering_id=offering.offering_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Lecture Session Date</label>
+          <input type="date" name="session_date" class="form-control" value="{{ today }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Lecture Topic / Learning Objective</label>
+          <input type="text" name="topic_covered" class="form-control" placeholder="e.g., Relational Algebra & Joins" required>
+        </div>
+      </div>
+      <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('new-session-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create Session &amp; Mark Roll</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Academic Learning Support & Recommendations — MiniLMS{% endblock %}
+{% block header_title %}My Learning Support{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Personalized Academic Support & Guidance</h1>
+    <p class="page-subtitle">Transparent, constructive progress recommendations to help you maintain eligibility and achieve academic excellence.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary-color);">
+  <div style="padding: 1.25rem 1.5rem;">
+    <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem 0;">💡 Actionable Learning Guidelines</h2>
+    <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+      ITM University guidelines require students to maintain a minimum of <strong>75% attendance</strong> to be eligible for end-semester examinations.
+      If your attendance or coursework scores need attention, please consult your course faculty advisor during weekly office hours.
+    </p>
+  </div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+  {% if profile %}
+    {% for item in profile %}
+    <div class="card" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+        <div>
+          <span class="badge badge-info" style="font-size: 0.85rem;">{{ item.course_code }}</span>
+          <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0.25rem 0 0 0;">{{ item.course_title }} (Section {{ item.section_name }})</h2>
+        </div>
+        <div>
+          <span class="badge {% if item.risk_classification == 'HIGH' %}badge-danger{% elif item.risk_classification == 'MODERATE' %}badge-warning{% else %}badge-success{% endif %}" style="font-size: 0.85rem;">
+            Academic Standing: {{ item.risk_classification }}
+          </span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Current Attendance</div>
+          <div style="font-size: 1.25rem; font-weight: 700; {% if item.attendance_pct|float < 75.0 %}color: #ef4444;{% else %}color: #10b981;{% endif %}">
+            {{ item.attendance_pct }}%
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            {% if item.attendance_pct|float < 75.0 %}
+              ⚠️ Below 75% statutory requirement
+            {% else %}
+              ✓ In compliance with university norm
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Coursework Average</div>
+          <div style="font-size: 1.25rem; font-weight: 700;">
+            {{ item.assessment_pct }}%
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Evaluated assignment submissions
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Overdue Assignments</div>
+          <div style="font-size: 1.25rem; font-weight: 700;">
+            {{ item.overdue_count }}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Pending coursework items past due date
+          </div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
+        <h3 style="font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">📋 Advisor Guidance & Diagnostic Notes</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.5rem 0;">{{ item.explanation }}</p>
+        {% if item.review_notes %}
+          <div style="border-top: 1px dashed var(--border-color); padding-top: 0.5rem; font-size: 0.825rem; color: var(--primary-color);">
+            <strong>Faculty Advisor Note:</strong> "{{ item.review_notes }}"
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+      <p style="font-size: 1rem; margin: 0 0 0.5rem 0;">No active course risks recorded for your account.</p>
+      <p style="font-size: 0.85rem; margin: 0;">Keep up the great work in your academic coursework!</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

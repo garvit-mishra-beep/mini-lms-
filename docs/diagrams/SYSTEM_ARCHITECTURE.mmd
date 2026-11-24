@@ -1,0 +1,86 @@
+flowchart TD
+    subgraph PresentationTier ["Presentation Tier (Web Browser / Client)"]
+        UI_Student["Student Portal View\n(Enrollment, Attendance, Submissions)"]
+        UI_Faculty["Faculty Portal View\n(Roll Call, Grading, Materials)"]
+        UI_Admin["Admin & Coordinator Dashboard\n(Curriculum, User Management, Reports)"]
+    end
+
+    subgraph ControllerTier ["Application Controller & Web Tier (Flask 3.0 WSGI)"]
+        AuthBlue["Authentication Blueprint\n(/login, /logout, /profile)"]
+        StudentBlue["Student Blueprint\n(/student/*)"]
+        FacultyBlue["Faculty Blueprint\n(/faculty/*)"]
+        AdminBlue["Admin Blueprint\n(/admin/*)"]
+        ReportBlue["Reporting Blueprint\n(/reports/*)"]
+        RiskBlue["Risk Detection Blueprint\n(/risk-dashboard)"]
+    end
+
+    subgraph ServiceRepositoryTier ["Domain Service & Repository Layer"]
+        AuthService["Auth & Session Service\n(Werkzeug Scrypt, Session Guards)"]
+        EnrollmentService["Enrollment Service\n(TX-01 Seat Allocation & Validation)"]
+        AttendanceService["Attendance Service\n(TX-02 Bulk Roll Call & Recalculation)"]
+        GradingService["Grading Service\n(TX-03 Evaluation & Feedback)"]
+        AnalyticsEngine["Reporting & Query Engine\n(25 Query Portfolio & Analytical Views)"]
+        RiskDetector["AI Academic Risk Detector\n(Heuristic Vulnerability Scorer)"]
+        AuditLogger["Audit Service\n(Tamper-evident Event Recording)"]
+    end
+
+    subgraph DatabaseEngineTier ["Database Engine Tier (MySQL 8.0.36 InnoDB)"]
+        subgraph MasterTables ["Master & Dimension Tables"]
+            T_Dept[departments]
+            T_Users[users]
+            T_Stud[students]
+            T_Fac[faculty]
+            T_Terms[academic_terms]
+            T_Courses[courses]
+        end
+
+        subgraph TransactionalTables ["Core Transactional Relations"]
+            T_Offerings[course_offerings]
+            T_Alloc[faculty_allocations]
+            T_Enroll[enrollments]
+            T_AttSess[attendance_sessions]
+            T_AttRec["attendance_records\n(Weak Entity)"]
+            T_Assign[assignments]
+            T_Sub[submissions]
+            T_Grades[grades]
+        end
+
+        subgraph AuxiliaryTables ["Auxiliary, Intelligence & Audit"]
+            T_Mat[course_materials]
+            T_Ann[announcements]
+            T_Risk[academic_risks]
+            T_Audit[audit_logs]
+        end
+
+        subgraph StoredRoutinesViews ["In-Database Logic (Procedures, Triggers, Views)"]
+            Procs["Stored Procedures:\nsp_enroll_student_in_course\nsp_record_attendance_session\nsp_grade_assignment_submission\nsp_detect_academic_risks"]
+            Trigs["Triggers (14 Triggers):\nSeat Counter Sync\nAttendance % Auto-Recalc\nAudit Trail Logging"]
+            Views["Analytical Views (5 Views):\nv_student_academic_summary\nv_department_performance\nv_academic_risk_dashboard"]
+        end
+    end
+
+    %% Wiring Flows
+    UI_Student --> StudentBlue
+    UI_Faculty --> FacultyBlue
+    UI_Admin --> AdminBlue
+    UI_Admin --> ReportBlue
+
+    AuthBlue --> AuthService
+    StudentBlue --> EnrollmentService
+    FacultyBlue --> AttendanceService
+    FacultyBlue --> GradingService
+    ReportBlue --> AnalyticsEngine
+    RiskBlue --> RiskDetector
+
+    EnrollmentService --> Procs
+    AttendanceService --> Procs
+    GradingService --> Procs
+    RiskDetector --> Procs
+    AnalyticsEngine --> Views
+    AuditLogger --> T_Audit
+
+    Procs --> MasterTables
+    Procs --> TransactionalTables
+    Trigs --> TransactionalTables
+    Trigs --> T_Audit
+    TransactionalTables --> Views

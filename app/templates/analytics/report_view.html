@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ report.meta.title }} ({{ report.meta.code }}) — MiniLMS Reports{% endblock %}
+{% block header_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <a href="{{ url_for('analytics.reports_catalog') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">&larr; Back to Catalog</a>
+      <span class="badge badge-info" style="font-family: monospace;">{{ report.meta.code }}</span>
+    </div>
+    <h1 class="page-title">{{ report.meta.title }}</h1>
+    <p class="page-subtitle">{{ report.meta.description }}</p>
+  </div>
+  <div class="page-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+    <span style="font-size: 0.85rem; color: var(--text-muted);">Generated: {{ report.generated_at }}</span>
+    <a href="{{ url_for('analytics.export_report', report_id=report.meta.code) }}" class="btn btn-primary">
+      📥 Export CSV
+    </a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+  <div style="padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); background: var(--bg-surface);">
+    <span style="font-size: 0.9rem; font-weight: 600;">Total Records: {{ report.count }}</span>
+    <span class="badge badge-success">● Direct SQL Feed</span>
+  </div>
+  <div class="table-container" style="overflow-x: auto;">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-surface);">
+          {% for h in report.headers %}
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); white-space: nowrap;">{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% if report.rows %}
+          {% for r in report.rows %}
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            {% for k, val in r.items() %}
+            <td style="padding: 0.75rem 1rem; font-size: 0.875rem; white-space: nowrap;">
+              {% if val is none %}
+                <span style="color: var(--text-muted); font-style: italic;">null</span>
+              {% elif 'status' in k|lower %}
+                <span class="badge {% if val in ('ACTIVE', 'PUBLISHED', 'COMPLETED', 'PRESENT') %}badge-success{% elif val in ('ABSENT', 'CANCELLED', 'DRAFT') %}badge-danger{% else %}badge-warning{% endif %}">
+                  {{ val }}
+                </span>
+              {% elif 'pct' in k|lower or 'attendance' in k|lower %}
+                <span style="font-weight: 600; {% if val|float < 75.0 %}color: var(--danger-color, #ef4444);{% endif %}">
+                  {{ val }}%
+                </span>
+              {% else %}
+                {{ val }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="{{ report.headers|length }}" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              No records returned for this report query.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

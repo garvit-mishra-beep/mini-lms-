@@ -50,7 +50,72 @@ def rollback_v006(conn):
     conn.commit()
     print("[OK] v006 rolled back successfully.")
 
+def rollback_v010(conn):
+    print("[*] Rolling back v010 (Views & Stored Programs)...")
+    with conn.cursor() as cur:
+        cur.execute("DROP VIEW IF EXISTS `v_faculty_workload`;")
+        cur.execute("DROP VIEW IF EXISTS `v_department_performance`;")
+        cur.execute("DROP VIEW IF EXISTS `v_course_offering_summary`;")
+        cur.execute("DROP VIEW IF EXISTS `v_student_academic_summary`;")
+        cur.execute("DROP VIEW IF EXISTS `faculty_allocations`;")
+        cur.execute("DROP VIEW IF EXISTS `faculty`;")
+        cur.execute("DROP PROCEDURE IF EXISTS `sp_calculate_student_gpa`;")
+        cur.execute("DROP PROCEDURE IF EXISTS `sp_grade_assignment_submission`;")
+        cur.execute("DROP PROCEDURE IF EXISTS `sp_record_attendance_session`;")
+        cur.execute("DROP PROCEDURE IF EXISTS `sp_enroll_student_in_offering`;")
+        cur.execute("DELETE FROM schema_versions WHERE version_no = 10;")
+    conn.commit()
+    print("[OK] v010 rolled back successfully.")
+
+def rollback_v009(conn):
+    print("[*] Rolling back v009 (Integrity Constraints & Triggers)...")
+    with conn.cursor() as cur:
+        cur.execute("DROP TRIGGER IF EXISTS `trg_audit_logs_no_delete`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_audit_logs_immutable`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_update_attendance_pct_after_update`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_update_attendance_pct_after_insert`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_enrollment_seat_decrement`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_enrollment_seat_increment`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_submission_offering_validate`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_att_offering_validate`;")
+        cur.execute("DROP TRIGGER IF EXISTS `trg_grade_bounds_check`;")
+        # Drop CHECK constraints
+        for tbl, chk in [
+            ('students', 'chk_student_cgpa'), ('students', 'chk_student_semester'),
+            ('courses', 'chk_course_credits'), ('course_offerings', 'chk_offering_capacity'),
+            ('course_offerings', 'chk_offering_enrolled'), ('academic_terms', 'chk_term_dates'),
+            ('assignments', 'chk_assignment_marks'), ('assignments', 'chk_assignment_weightage'),
+            ('grades', 'chk_grade_final_score'), ('enrollments', 'chk_enrollment_att_pct')
+        ]:
+            try:
+                cur.execute(f"ALTER TABLE `{tbl}` DROP CHECK `{chk}`;")
+            except Exception:
+                pass
+        cur.execute("DELETE FROM schema_versions WHERE version_no = 9;")
+    conn.commit()
+    print("[OK] v009 rolled back successfully.")
+
+def rollback_v008(conn):
+    print("[*] Rolling back v008 (Core Academic Enhancements)...")
+    with conn.cursor() as cur:
+        cur.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        cur.execute("DROP TABLE IF EXISTS `announcements`;")
+        cur.execute("DROP TABLE IF EXISTS `submissions`;")
+        cur.execute("DROP TABLE IF EXISTS `assignments`;")
+        cur.execute("DROP TABLE IF EXISTS `attendance_records`;")
+        cur.execute("DROP TABLE IF EXISTS `attendance_sessions`;")
+        cur.execute("DROP TABLE IF EXISTS `course_offerings`;")
+        cur.execute("DROP TABLE IF EXISTS `academic_terms`;")
+        cur.execute("DROP TABLE IF EXISTS `departments`;")
+        cur.execute("DELETE FROM schema_versions WHERE version_no = 8;")
+        cur.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    conn.commit()
+    print("[OK] v008 rolled back successfully.")
+
 ROLLBACK_HANDLERS = {
+    10: rollback_v010,
+    9: rollback_v009,
+    8: rollback_v008,
     7: rollback_v007,
     6: rollback_v006
 }

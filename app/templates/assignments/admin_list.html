@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block header_title %}All Coursework Assignments{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">📝 Institutional Coursework Directory</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Comprehensive listing of all coursework assignments and submission progress across courses.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Section</th>
+            <th>Title</th>
+            <th>Faculty Author</th>
+            <th>Max Marks</th>
+            <th>Weightage</th>
+            <th>Due Date</th>
+            <th>Submissions</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+          <tr>
+            <td><strong>{{ a.course_code }}</strong></td>
+            <td><span class="badge badge-secondary">Sec {{ a.section_name }}</span></td>
+            <td><strong>{{ a.title }}</strong></td>
+            <td>{{ a.teacher_name }}</td>
+            <td>{{ a.max_marks }}</td>
+            <td>{{ a.weightage_pct }}%</td>
+            <td><code>{{ a.due_date }}</code></td>
+            <td><span class="badge badge-primary">{{ a.submission_count }} Submitted</span></td>
+            <td>
+              <a href="{{ url_for('assignments.submissions', assignment_id=a.assignment_id) }}" class="btn btn-secondary btn-sm">
+                View Submissions &rarr;
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted" style="padding: 1.5rem;">No assignments published across offerings.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

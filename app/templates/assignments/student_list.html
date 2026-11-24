@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block header_title %}Coursework Assignments{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">📝 Coursework &amp; Lab Assignments</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Review assigned lab tasks, submit solutions, and inspect faculty evaluation scores and feedback.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Assignment Title</th>
+            <th>Max Marks</th>
+            <th>Weightage</th>
+            <th>Due Date</th>
+            <th>Submission Status</th>
+            <th>Score Obtained</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+          <tr>
+            <td>
+              <strong>{{ a.course_code }}</strong><br>
+              <small class="text-muted">Sec {{ a.section_name }}</small>
+            </td>
+            <td>
+              <strong>{{ a.title }}</strong><br>
+              <small class="text-muted">{{ a.description[:80] }}...</small>
+            </td>
+            <td>{{ a.max_marks }}</td>
+            <td>{{ a.weightage_pct }}%</td>
+            <td><code>{{ a.due_date }}</code></td>
+            <td>
+              {% if a.submission_status == 'EVALUATED' %}
+                <span class="badge badge-success">Evaluated</span>
+              {% elif a.submission_status == 'SUBMITTED' %}
+                <span class="badge badge-info">Submitted</span>
+              {% elif a.submission_status == 'RESUBMITTED' %}
+                <span class="badge badge-warning">Resubmitted</span>
+              {% else %}
+                <span class="badge badge-error">Pending</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.marks_obtained is not none %}
+                <strong style="color: var(--primary);">{{ a.marks_obtained }}</strong> / {{ a.max_marks }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('assignments.details', assignment_id=a.assignment_id) }}" class="btn btn-secondary btn-sm">
+                {% if a.submission_status %}View Submission{% else %}Submit Solution &rarr;{% endif %}
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">No coursework assignments currently pending.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

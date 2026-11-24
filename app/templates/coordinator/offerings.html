@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block header_title %}Course Offerings & Section Scheduling{% endblock %}
+
+{% block content %}
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h2 style="margin: 0; font-size: 1.25rem;">📚 Term Course Offerings</h2>
+    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+      Manage section capacities, instructor allocations, and enrollment states across academic terms.
+    </p>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('new-offering-modal').style.display='flex'">
+    + Schedule New Section
+  </button>
+</div>
+
+<!-- Offerings Table -->
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>Course</th>
+            <th>Dept</th>
+            <th>Credits</th>
+            <th>Section</th>
+            <th>Primary Instructor</th>
+            <th>Enrollment</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in offerings %}
+          <tr>
+            <td><code>{{ o.term_code }}</code></td>
+            <td><strong>{{ o.course_code }}</strong><br><small class="text-muted">{{ o.course_title }}</small></td>
+            <td><span class="badge badge-secondary">{{ o.department_code }}</span></td>
+            <td>{{ o.credits }}</td>
+            <td><strong>Sec {{ o.section_name }}</strong></td>
+            <td>{{ o.instructor_name or 'Unassigned' }}</td>
+            <td>
+              <div style="font-weight: 600;">{{ o.enrolled_count }} / {{ o.max_capacity }}</div>
+              <small class="text-muted">{{ ((o.enrolled_count / o.max_capacity) * 100)|round(1) }}% full</small>
+            </td>
+            <td>
+              <span class="badge badge-{{ 'success' if o.offering_status == 'OPEN' else ('secondary' if o.offering_status == 'COMPLETED' else 'warning') }}">
+                {{ o.offering_status }}
+              </span>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('coordinator.update_offering_status', offering_id=o.offering_id) }}" style="display: inline-flex; gap: 0.3rem;">
+                <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                <select name="status" class="form-control" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; height: auto;">
+                  <option value="OPEN" {% if o.offering_status == 'OPEN' %}selected{% endif %}>OPEN</option>
+                  <option value="CLOSED" {% if o.offering_status == 'CLOSED' %}selected{% endif %}>CLOSED</option>
+                  <option value="PLANNED" {% if o.offering_status == 'PLANNED' %}selected{% endif %}>PLANNED</option>
+                  <option value="COMPLETED" {% if o.offering_status == 'COMPLETED' %}selected{% endif %}>COMPLETED</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Set</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted" style="padding: 1.5rem;">No course offerings scheduled.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for New Offering -->
+<div id="new-offering-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 500px; margin: 1rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">Schedule New Section Offering</h3>
+      <button type="button" onclick="document.getElementById('new-offering-modal').style.display='none'" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('coordinator.create_offering') }}">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Course</label>
+          <select name="course_id" class="form-control" required>
+            <option value="">-- Select Course --</option>
+            {% for c in courses %}
+            <option value="{{ c.course_id }}">{{ c.course_code }} — {{ c.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Academic Term</label>
+          <select name="term_id" class="form-control" required>
+            <option value="">-- Select Term --</option>
+            {% for t in terms %}
+            <option value="{{ t.term_id }}">{{ t.term_code }} ({{ t.term_name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Section Identifier</label>
+            <input type="text" name="section_name" class="form-control" value="A" maxlength="5" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Student Capacity</label>
+            <input type="number" name="max_capacity" class="form-control" value="60" min="5" max="300" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Primary Faculty Instructor (Optional)</label>
+          <select name="teacher_id" class="form-control">
+            <option value="">-- Unassigned (Assign Later) --</option>
+            {% for f in faculty %}
+            <option value="{{ f.teacher_id }}">{{ f.full_name }} ({{ f.employee_code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('new-offering-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create Offering</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

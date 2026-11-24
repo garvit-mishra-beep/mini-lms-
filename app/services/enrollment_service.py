@@ -124,6 +124,38 @@ def enroll_student(student_id, course_id, actor_user_id=None):
             'message': f"Enrollment could not be completed: {err_msg}"
         }
 
+def enroll_student_in_offering(student_id, offering_id, actor_user_id=None):
+    """
+    Perform atomic enrollment of a student into a specific course offering section
+    using stored procedure sp_enroll_student_in_offering.
+    """
+    conn = None
+    try:
+        from app.db import get_connection
+        conn = get_connection()
+        with conn.cursor() as cur:
+            cur.callproc('sp_enroll_student_in_offering', (student_id, offering_id, 0, ''))
+            cur.execute("SELECT @_sp_enroll_student_in_offering_2, @_sp_enroll_student_in_offering_3;")
+            row = cur.fetchone()
+            vals = list(row.values()) if isinstance(row, dict) else list(row)
+            enr_id = vals[0]
+            status_msg = vals[1]
+        conn.commit()
+
+        if enr_id and enr_id > 0:
+            if actor_user_id:
+                record_audit_log('enrollments', enr_id, 'ENROLL_OFFERING', actor_user_id,
+                                 f"Enrolled student #{student_id} into offering #{offering_id}")
+            return {'success': True, 'enrollment_id': enr_id, 'message': status_msg}
+        else:
+            return {'success': False, 'message': status_msg}
+    except pymysql.MySQLError as e:
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        return {'success': False, 'message': f"Enrollment error: {msg}"}
+    finally:
+        if conn:
+            conn.close()
+
 def cancel_enrollment(enrollment_id, actor_user_id=None):
     """Cancel an active enrollment, allowing subsequent re-enrollment if required."""
     enrollment = get_enrollment_by_id(enrollment_id)

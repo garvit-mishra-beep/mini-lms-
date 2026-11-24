@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Institutional Reports Catalog — MiniLMS{% endblock %}
+{% block header_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Institutional Report Catalog</h1>
+    <p class="page-subtitle">Standardized operational, management, trend, and exception reports powered by SQL queries and views.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('analytics.executive_dashboard') }}" class="btn btn-primary">📊 Executive Dashboard</a>
+  </div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+  {% for category, cat_name, cat_desc in [
+    ('OPERATIONAL', 'Operational Reports', 'Day-to-day transactional registries for students, attendance, grades, and submissions.'),
+    ('MANAGEMENT', 'Management & Strategic Reports', 'Institutional performance benchmarks, capacity analytics, and faculty workload distribution.'),
+    ('TREND', 'Trend & Longitudinal Reports', 'Temporal analysis of registration growth, lecture attendance, and grade scores.'),
+    ('EXCEPTION', 'Academic Exception Reports', 'Early alerts for low attendance (< 75%) and pending un-graded submissions.')
+  ] %}
+  <div class="card">
+    <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0;">{{ cat_name }}</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">{{ cat_desc }}</p>
+    </div>
+    <div style="padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+      {% for code, rep in catalog.items() if rep.category == category %}
+      <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--bg-surface);">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span class="badge badge-info" style="font-family: monospace; font-weight: 700;">{{ rep.code }}</span>
+            <span class="badge {% if category == 'EXCEPTION' %}badge-danger{% elif category == 'MANAGEMENT' %}badge-warning{% else %}badge-primary{% endif %}">{{ rep.category }}</span>
+          </div>
+          <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0;">{{ rep.title }}</h3>
+          <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4; margin: 0 0 1rem 0;">{{ rep.description }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+          <a href="{{ url_for('analytics.view_report', report_id=rep.code) }}" class="btn btn-outline" style="flex: 1; text-align: center; font-size: 0.85rem; padding: 0.4rem 0.6rem;">👁️ View Report</a>
+          <a href="{{ url_for('analytics.export_report', report_id=rep.code) }}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.6rem;" title="Download CSV">📥 CSV</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

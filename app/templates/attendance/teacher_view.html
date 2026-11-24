@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block header_title %}Faculty Attendance Management{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">📅 Course Offerings Attendance Portal</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Select an assigned course offering section to record lecture roll call or review historical session logs.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>Course</th>
+            <th>Section</th>
+            <th>Enrolled Students</th>
+            <th>Section Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in offerings %}
+          <tr>
+            <td><code>{{ o.term_code }}</code></td>
+            <td><strong>{{ o.course_code }}</strong> — {{ o.course_title }}</td>
+            <td><span class="badge badge-secondary">Sec {{ o.section_name }}</span></td>
+            <td><strong>{{ o.enrolled_count }}</strong> / {{ o.max_capacity }}</td>
+            <td><span class="badge badge-success">{{ o.offering_status }}</span></td>
+            <td>
+              <a href="{{ url_for('attendance.offering_sessions', offering_id=o.offering_id) }}" class="btn btn-primary btn-sm">
+                View & Record Attendance &rarr;
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No course offering sections currently assigned.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

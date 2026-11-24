@@ -65,7 +65,8 @@ def demo_login(role):
     role_map = {
         'admin': 'admin@example.test',
         'teacher': 'anita@example.test',
-        'student': 'aarav@example.test'
+        'student': 'aarav@example.test',
+        'coordinator': 'coordinator@example.test'
     }
     email = role_map.get(role.lower())
     if not email:

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block header_title %}Create Assignment — {{ offering.course_code }}{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">Publish Coursework Assignment</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    {{ offering.course_code }} — {{ offering.course_title }} (Section {{ offering.section_name }})
+  </p>
+</div>
+
+<div class="card" style="max-width: 680px;">
+  <form method="POST" action="{{ url_for('assignments.create_assignment', offering_id=offering.offering_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+    
+    <div class="card-body">
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label">Assignment Title</label>
+        <input type="text" name="title" class="form-control" placeholder="e.g., Lab 3: SQL Triggers and Stored Procedures" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label">Problem Statement &amp; Guidelines</label>
+        <textarea name="description" rows="5" class="form-control" placeholder="Describe requirements, deliverables, and evaluation criteria..." required></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Maximum Marks (1 – 500)</label>
+          <input type="number" step="0.5" name="max_marks" value="100.0" min="1" max="500" class="form-control" required>
+          <small class="text-muted">Enforced by MySQL CHECK constraint <code>chk_assignment_marks</code></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Weightage in Final Grade (%)</label>
+          <input type="number" step="0.5" name="weightage_pct" value="10.0" min="0" max="100" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label">Submission Due Date &amp; Time</label>
+        <input type="datetime-local" name="due_date" class="form-control" required>
+      </div>
+    </div>
+
+    <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <a href="{{ url_for('assignments.index') }}" class="btn btn-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-sm">Publish Assignment</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

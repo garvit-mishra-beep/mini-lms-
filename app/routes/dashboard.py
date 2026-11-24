@@ -8,6 +8,10 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/')
 @login_required
 def index():
+    if current_user.is_coordinator:
+        from flask import redirect, url_for
+        return redirect(url_for('coordinator.index'))
+
     # Fetch live KPI statistics from the actual MySQL database
     metrics = {
         'students': scalar("SELECT COUNT(*) FROM students"),

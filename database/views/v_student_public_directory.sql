@@ -1,0 +1,3 @@
+-- Relational View: v_student_public_directory
+-- MiniLMS Database Engineering
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_student_public_directory` AS select `s`.`student_id` AS `student_id`,`s`.`roll_no` AS `roll_no`,`s`.`enrollment_no` AS `enrollment_no`,`u`.`full_name` AS `full_name`,concat(left(`u`.`email`,2),'***@***',right(`u`.`email`,4)) AS `masked_email`,`d`.`department_code` AS `department_code`,`d`.`department_name` AS `department_name`,`s`.`current_semester` AS `current_semester`,`u`.`status` AS `student_status` from ((`students` `s` join `users` `u` on((`s`.`user_id` = `u`.`user_id`))) left join `departments` `d` on((`u`.`department_id` = `d`.`department_id`)));

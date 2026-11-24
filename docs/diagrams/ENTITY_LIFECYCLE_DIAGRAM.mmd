@@ -1,0 +1,34 @@
+%% Entity Lifecycle State Transition Diagrams — MiniLMS
+%% ITM University CSL0311 DBMS PBL
+
+stateDiagram-v2
+    state "User Account Lifecycle" as UserLife {
+        [*] --> UserActive : Provision Account
+        UserActive --> UserInactive : Deactivate Account
+        UserInactive --> UserActive : Restore Account
+        UserInactive --> UserArchived : Purge Historical
+    }
+
+    state "Course Offering Lifecycle" as CourseLife {
+        [*] --> CourseDraft : Create Course Shell
+        CourseDraft --> CoursePublished : Assign Faculty & Publish
+        CoursePublished --> CourseArchived : Semester Conclusion
+    }
+
+    state "Student Enrollment Lifecycle" as EnrollLife {
+        [*] --> EnrollActive : sp_enroll Atomic Tx
+        EnrollActive --> EnrollCancelled : Student Drop
+        EnrollActive --> EnrollCompleted : sp_update_completion
+    }
+
+    state "Assessment Attempt Lifecycle" as AttemptLife {
+        [*] --> AttemptInProgress : sp_start_attempt
+        AttemptInProgress --> AttemptSubmitted : sp_submit_attempt
+        AttemptSubmitted --> AttemptLocked : trg_attempt_score Immutable
+    }
+
+    state "Course Grade Lifecycle" as GradeLife {
+        [*] --> GradeUnpublished : Computed from Assessments
+        GradeUnpublished --> GradePublished : sp_publish_grade
+        GradePublished --> GradeCorrected : sp_correct_published_grade (Audited)
+    }

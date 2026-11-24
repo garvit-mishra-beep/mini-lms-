@@ -1,0 +1,204 @@
+erDiagram
+    DEPARTMENTS ||--o{ USERS : "employs / enrolls"
+    DEPARTMENTS ||--o{ COURSES : "offers"
+    
+    USERS ||--|| STUDENTS : "specializes as (1:1)"
+    USERS ||--|| FACULTY : "specializes as (1:1)"
+    USERS ||--o{ ANNOUNCEMENTS : "authors"
+    USERS ||--o{ AUDIT_LOGS : "triggers"
+    
+    COURSES ||--o{ COURSE_OFFERINGS : "delivers in terms"
+    ACADEMIC_TERMS ||--o{ COURSE_OFFERINGS : "schedules"
+    
+    FACULTY ||--o{ FACULTY_ALLOCATIONS : "is assigned to"
+    COURSE_OFFERINGS ||--o{ FACULTY_ALLOCATIONS : "allocates"
+    
+    STUDENTS ||--o{ ENROLLMENTS : "registers in"
+    COURSE_OFFERINGS ||--o{ ENROLLMENTS : "contains"
+    
+    COURSE_OFFERINGS ||--o{ ATTENDANCE_SESSIONS : "conducts"
+    FACULTY ||--o{ ATTENDANCE_SESSIONS : "holds"
+    
+    ATTENDANCE_SESSIONS ||--|{ ATTENDANCE_RECORDS : "comprises (identifying)"
+    ENROLLMENTS ||--o{ ATTENDANCE_RECORDS : "records presence for"
+    
+    COURSE_OFFERINGS ||--o{ ASSIGNMENTS : "publishes"
+    FACULTY ||--o{ ASSIGNMENTS : "creates"
+    
+    ASSIGNMENTS ||--o{ SUBMISSIONS : "receives"
+    ENROLLMENTS ||--o{ SUBMISSIONS : "submits"
+    
+    SUBMISSIONS ||--o| GRADES : "is evaluated by (1:1)"
+    FACULTY ||--o{ GRADES : "evaluates"
+    
+    COURSE_OFFERINGS ||--o{ COURSE_MATERIALS : "provides"
+    FACULTY ||--o{ COURSE_MATERIALS : "uploads"
+    
+    COURSE_OFFERINGS ||--o{ ANNOUNCEMENTS : "targets (optional)"
+    
+    ENROLLMENTS ||--o{ ACADEMIC_RISKS : "incurs"
+
+    DEPARTMENTS {
+        int department_id PK
+        string department_code UK
+        string department_name UK
+        string building
+        boolean is_active
+    }
+    
+    USERS {
+        int user_id PK
+        string username UK
+        string email UK
+        string password_hash
+        string role
+        string first_name
+        string last_name
+        int department_id FK
+        boolean is_active
+    }
+    
+    STUDENTS {
+        int student_id PK, FK
+        string enrollment_no UK
+        date admission_date
+        int current_semester
+        decimal cgpa
+        string status
+    }
+    
+    FACULTY {
+        int faculty_id PK, FK
+        string employee_code UK
+        string designation
+        string qualification
+        date joining_date
+    }
+    
+    ACADEMIC_TERMS {
+        int term_id PK
+        string term_code UK
+        string term_name
+        date start_date
+        date end_date
+        boolean is_current
+    }
+    
+    COURSES {
+        int course_id PK
+        string course_code UK
+        string course_name
+        decimal credits
+        int department_id FK
+        boolean is_active
+    }
+    
+    COURSE_OFFERINGS {
+        int offering_id PK
+        int course_id FK
+        int term_id FK
+        string section_name
+        int max_capacity
+        int enrolled_count
+        string status
+    }
+    
+    FACULTY_ALLOCATIONS {
+        int allocation_id PK
+        int offering_id FK
+        int faculty_id FK
+        string role_in_course
+    }
+    
+    ENROLLMENTS {
+        int enrollment_id PK
+        int student_id FK
+        int offering_id FK
+        date enrollment_date
+        string status
+        string final_grade
+        decimal total_attendance_pct
+    }
+    
+    ATTENDANCE_SESSIONS {
+        int session_id PK
+        int offering_id FK
+        int faculty_id FK
+        date session_date
+        string topic_covered
+    }
+    
+    ATTENDANCE_RECORDS {
+        int session_id PK, FK
+        int enrollment_id PK, FK
+        string status
+        string remarks
+        datetime marked_at
+    }
+    
+    ASSIGNMENTS {
+        int assignment_id PK
+        int offering_id FK
+        string title
+        decimal max_marks
+        decimal weightage_pct
+        datetime due_date
+        int created_by FK
+    }
+    
+    SUBMISSIONS {
+        int submission_id PK
+        int assignment_id FK
+        int enrollment_id FK
+        string file_path
+        datetime submitted_at
+        string status
+    }
+    
+    GRADES {
+        int grade_id PK
+        int submission_id UK, FK
+        decimal marks_obtained
+        string feedback
+        int graded_by FK
+        datetime graded_at
+    }
+    
+    COURSE_MATERIALS {
+        int material_id PK
+        int offering_id FK
+        string title
+        string file_path
+        string file_type
+        int uploaded_by FK
+    }
+    
+    ANNOUNCEMENTS {
+        int announcement_id PK
+        string title
+        string content
+        int offering_id FK
+        int author_id FK
+        datetime created_at
+    }
+    
+    ACADEMIC_RISKS {
+        int risk_id PK
+        int enrollment_id FK
+        string risk_type
+        string risk_level
+        decimal risk_score
+        string rationale
+        string status
+    }
+    
+    AUDIT_LOGS {
+        bigint log_id PK
+        int user_id FK
+        string action
+        string table_name
+        int record_id
+        json old_values
+        json new_values
+        datetime created_at
+    }

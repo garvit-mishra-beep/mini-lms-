@@ -1,0 +1,3 @@
+-- Relational View: faculty_allocations
+-- MiniLMS Database Engineering
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `faculty_allocations` AS select concat(`course_instructors`.`course_id`,'_',`course_instructors`.`teacher_id`) AS `allocation_id`,`course_instructors`.`offering_id` AS `offering_id`,`course_instructors`.`course_id` AS `course_id`,`course_instructors`.`teacher_id` AS `faculty_id`,`course_instructors`.`role_in_course` AS `role_in_course`,`course_instructors`.`is_authorized` AS `is_authorized`,`course_instructors`.`assigned_at` AS `assigned_at` from `course_instructors`;

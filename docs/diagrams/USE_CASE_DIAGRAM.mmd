@@ -1,0 +1,47 @@
+%% Use Case Diagram — MiniLMS
+%% ITM University CSL0311 DBMS PBL
+
+graph LR
+    subgraph Actors ["Stakeholder Actors"]
+        Student["fa:fa-user Student"]
+        Faculty["fa:fa-chalkboard-teacher Faculty / Teacher"]
+        Coord["fa:fa-user-tie Academic Coordinator"]
+        Admin["fa:fa-cogs System Administrator (DBA)"]
+    end
+
+    subgraph SystemBoundary ["MiniLMS Relational Enterprise Application"]
+        UC01["UC-01: Authenticate & Manage Session"]
+        UC02["UC-02: Self-Enroll in Published Course"]
+        UC03["UC-03: Complete Lesson with Prerequisite Check"]
+        UC04["UC-04: Take Quiz with Server-Side Scoring"]
+        UC05["UC-05: Record Class Session Attendance"]
+        UC06["UC-06: Publish & Correct Grades (Audited)"]
+        UC07["UC-07: Issue & Publicly Verify Certificate"]
+        UC08["UC-08: Detect Academic Risk (Explainable AI)"]
+        UC09["UC-09: Generate Analytics & Management Reports"]
+        UC10["UC-10: Introspect Database Schema & Execute Queries"]
+        UC11["UC-11: Provision Users & Execute Migrations"]
+    end
+
+    Student --> UC01
+    Student --> UC02
+    Student --> UC03
+    Student --> UC04
+    Student --> UC07
+
+    Faculty --> UC01
+    Faculty --> UC03
+    Faculty --> UC04
+    Faculty --> UC05
+    Faculty --> UC06
+    Faculty --> UC07
+    Faculty --> UC09
+
+    Coord --> UC01
+    Coord --> UC08
+    Coord --> UC09
+
+    Admin --> UC01
+    Admin --> UC10
+    Admin --> UC11
+    Admin --> UC09

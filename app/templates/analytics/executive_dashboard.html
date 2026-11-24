@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Executive Leadership Dashboard — MiniLMS{% endblock %}
+{% block header_title %}Analytics{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN for live database analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Executive Leadership Dashboard</h1>
+    <p class="page-subtitle">Strategic institutional KPIs, academic standing metrics, and capacity utilization heatmaps.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('analytics.reports_catalog') }}" class="btn btn-outline">📑 Institutional Reports</a>
+    <a href="{{ url_for('analytics.export_report', report_id='MR-02') }}" class="btn btn-primary">📥 Export Capacity CSV</a>
+  </div>
+</div>
+
+<!-- Executive KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-blue">🏛️</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Institutional Mean CGPA</span>
+      <span class="kpi-value">{{ kpis.avg_cgpa or '0.00' }}</span>
+      <span class="kpi-subtext">Across {{ kpis.total_students }} Enrolled Students</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-cyan">📈</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Capacity Utilization</span>
+      <span class="kpi-value">{{ kpis.capacity_utilization or '0.0' }}%</span>
+      <span class="kpi-subtext">Section Demand vs Limit</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-green">🎯</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Academic Retention</span>
+      <span class="kpi-value">{{ kpis.retention_pct or '0.0' }}%</span>
+      <span class="kpi-subtext">Active vs Dropped/Cancelled</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-purple">📅</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Average Attendance</span>
+      <span class="kpi-value">{{ kpis.avg_attendance or '0.0' }}%</span>
+      <span class="kpi-subtext">{{ kpis.published_grades }} Published Course Grades</span>
+    </div>
+  </div>
+</div>
+
+<!-- Visual Charts Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+  <!-- Chart 1: Department Mean CGPA Comparison -->
+  <div class="card" style="padding: 1.25rem;">
+    <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0;">Department Academic Performance Benchmark</h3>
+    <div style="position: relative; height: 260px;">
+      <canvas id="deptCgpaChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Section Capacity Utilization Heatmap -->
+  <div class="card" style="padding: 1.25rem;">
+    <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0;">Course Offering Section Capacity Utilization (%)</h3>
+    <div style="position: relative; height: 260px;">
+      <canvas id="capacityUtilChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Offering Demand Table -->
+<div class="card" style="margin-top: 1.5rem;">
+  <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">Course Offering Capacity Shortage & Demand Heatmap</h3>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Real-time monitoring of enrollment caps vs student demand</p>
+    </div>
+    <a href="{{ url_for('analytics.view_report', report_id='MR-02') }}" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Full Report &rarr;</a>
+  </div>
+  <div class="table-container" style="overflow-x: auto;">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-surface);">
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">COURSE</th>
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">SECTION</th>
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">PRIMARY FACULTY</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">ENROLLED</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">MAX CAP</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">UTILIZATION</th>
+          <th style="padding: 0.75rem 1rem; text-align: center; font-size: 0.8rem;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for co in capacity_stats %}
+        <tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 0.75rem 1rem; font-weight: 600;">{{ co.course_code }} - {{ co.course_title }}</td>
+          <td style="padding: 0.75rem 1rem;">Section {{ co.section_name }}</td>
+          <td style="padding: 0.75rem 1rem;">{{ co.primary_instructor_name or 'Unassigned' }}</td>
+          <td style="padding: 0.75rem 1rem; text-align: right;">{{ co.enrolled_count }}</td>
+          <td style="padding: 0.75rem 1rem; text-align: right;">{{ co.max_capacity }}</td>
+          <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 600;">{{ co.capacity_utilization_pct }}%</td>
+          <td style="padding: 0.75rem 1rem; text-align: center;">
+            <span class="badge {% if co.capacity_utilization_pct|float >= 85.0 %}badge-danger{% elif co.capacity_utilization_pct|float >= 50.0 %}badge-primary{% else %}badge-info{% endif %}">
+              {% if co.capacity_utilization_pct|float >= 85.0 %}CRITICAL DEMAND{% else %}NORMAL{% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const chartData = {{ charts_json | safe }};
+
+  // 1. Department CGPA Chart
+  new Chart(document.getElementById('deptCgpaChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.dept_labels,
+      datasets: [{
+        label: 'Mean CGPA (Scale 0-10)',
+        data: chartData.dept_cgpa,
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, max: 10 }
+      }
+    }
+  });
+
+  // 2. Capacity Utilization Chart
+  new Chart(document.getElementById('capacityUtilChart'), {
+    type: 'bar',
+    data: {
+      labels: chartData.cap_labels,
+      datasets: [{
+        label: 'Section Utilization %',
+        data: chartData.cap_util,
+        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+        borderColor: 'rgb(16, 185, 129)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, max: 100 }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

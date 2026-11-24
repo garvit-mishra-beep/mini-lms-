@@ -12,6 +12,11 @@ from app.routes.analytics import analytics_bp
 from app.routes.audit import audit_bp
 from app.routes.explorer import explorer_bp
 from app.routes.settings import settings_bp
+from app.routes.coordinator import coordinator_bp
+from app.routes.attendance import attendance_bp
+from app.routes.assignments import assignments_bp
+from app.routes.announcements import announcements_bp
+from app.routes.intelligence import intelligence_bp
 
 __all__ = [
     'dashboard_bp',
@@ -26,5 +31,10 @@ __all__ = [
     'analytics_bp',
     'audit_bp',
     'explorer_bp',
-    'settings_bp'
+    'settings_bp',
+    'coordinator_bp',
+    'attendance_bp',
+    'assignments_bp',
+    'announcements_bp',
+    'intelligence_bp'
 ]

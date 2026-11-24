@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Academic Early Warning & Risk Management — MiniLMS{% endblock %}
+{% block header_title %}Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Intelligent Academic Early Warning System</h1>
+    <p class="page-subtitle">Explainable pedagogical risk detection engine evaluating attendance deficits, coursework scores, and overdue submissions.</p>
+  </div>
+  <div class="page-actions" style="display: flex; gap: 0.75rem;">
+    <form method="POST" action="{{ url_for('intelligence.evaluate_all') }}" style="margin: 0;">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+      <button type="submit" class="btn btn-primary">⚡ Run System-Wide Evaluation</button>
+    </form>
+    <a href="{{ url_for('analytics.view_report', report_id='ER-01') }}" class="btn btn-outline">⚠️ Debarment Report</a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-blue">👥</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Total Enrollees Assessed</span>
+      <span class="kpi-value">{{ metrics.total_assessed }}</span>
+      <span class="kpi-subtext">Active Course Offerings</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-red" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🚨</div>
+    <div class="kpi-info">
+      <span class="kpi-label">High Risk Profiles</span>
+      <span class="kpi-value" style="color: #ef4444;">{{ metrics.high_risk }}</span>
+      <span class="kpi-subtext">Immediate Advisory Needed</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-yellow" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">⚠️</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Moderate Risk Profiles</span>
+      <span class="kpi-value" style="color: #f59e0b;">{{ metrics.moderate_risk }}</span>
+      <span class="kpi-subtext">Early Monitoring Required</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper kpi-green">🛡️</div>
+    <div class="kpi-info">
+      <span class="kpi-label">Pending Human Reviews</span>
+      <span class="kpi-value">{{ metrics.pending_reviews }}</span>
+      <span class="kpi-subtext">Awaiting Faculty Action</span>
+    </div>
+  </div>
+</div>
+
+<!-- Risk Table & Filtering -->
+<div class="card" style="margin-top: 1.5rem;">
+  <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Academic Risk Evaluation Registry</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Deterministic, transparent heuristic scoring (40% Attendance + 40% Grade + 20% Overdue)</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <a href="{{ url_for('intelligence.risks_dashboard') }}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.6rem;">All</a>
+      <a href="{{ url_for('intelligence.risks_dashboard', classification='HIGH') }}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.6rem; color: #ef4444;">High Risk</a>
+      <a href="{{ url_for('intelligence.risks_dashboard', classification='MODERATE') }}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.6rem; color: #f59e0b;">Moderate</a>
+      <a href="{{ url_for('intelligence.risks_dashboard', review_status='PENDING') }}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.6rem;">Pending Review</a>
+    </div>
+  </div>
+
+  <div class="table-container" style="overflow-x: auto;">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-surface);">
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">STUDENT</th>
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">COURSE</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">ATTENDANCE</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">AVG GRADE</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">OVERDUE</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.8rem;">RISK SCORE</th>
+          <th style="padding: 0.75rem 1rem; text-align: center; font-size: 0.8rem;">TIER</th>
+          <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;">HUMAN OVERSIGHT REVIEW</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if risks %}
+          {% for r in risks %}
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 0.75rem 1rem;">
+              <div style="font-weight: 600;">{{ r.student_name }}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">{{ r.roll_no }}</div>
+            </td>
+            <td style="padding: 0.75rem 1rem;">
+              <span class="badge badge-info">{{ r.course_code }}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Sec {{ r.section_name }}</span>
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 600; {% if r.attendance_pct|float < 75.0 %}color: #ef4444;{% endif %}">
+              {{ r.attendance_pct }}%
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: right;">
+              {{ r.assessment_pct }}%
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: right;">
+              {{ r.overdue_count }}
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 700; font-size: 0.95rem;">
+              {{ r.risk_score }}
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: center;">
+              <span class="badge {% if r.risk_classification == 'HIGH' %}badge-danger{% elif r.risk_classification == 'MODERATE' %}badge-warning{% elif r.risk_classification == 'INSUFFICIENT_DATA' %}badge-secondary{% else %}badge-success{% endif %}">
+                {{ r.risk_classification }}
+              </span>
+            </td>
+            <td style="padding: 0.75rem 1rem;">
+              {% if r.review_status == 'PENDING' %}
+                <form method="POST" action="{{ url_for('intelligence.submit_review', risk_id=r.risk_id) }}" style="display: flex; gap: 0.4rem; align-items: center; margin: 0;">
+                  <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                  <select name="review_status" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-main);">
+                    <option value="CONFIRMED">Confirm</option>
+                    <option value="INTERVENTION_PLANNED">Intervene</option>
+                    <option value="DISMISSED">Dismiss</option>
+                  </select>
+                  <input type="text" name="review_notes" placeholder="Review reason / notes..." required style="font-size: 0.8rem; padding: 0.25rem 0.5rem; width: 140px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-main);">
+                  <button type="submit" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Save</button>
+                </form>
+              {% else %}
+                <div style="font-size: 0.85rem;">
+                  <span class="badge {% if r.review_status == 'CONFIRMED' %}badge-danger{% elif r.review_status == 'INTERVENTION_PLANNED' %}badge-warning{% else %}badge-info{% endif %}">
+                    {{ r.review_status }}
+                  </span>
+                  {% if r.reviewer_name %}
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">by {{ r.reviewer_name }}</span>
+                  {% endif %}
+                  {% if r.review_notes %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; font-style: italic;">"{{ r.review_notes }}"</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              No student records matching the selected risk filters.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -24,6 +24,9 @@ def role_required(*allowed_roles):
 def admin_required(f):
     return role_required('ADMIN')(f)
 
+def coordinator_required(f):
+    return role_required('ADMIN', 'COORDINATOR')(f)
+
 def teacher_required(f):
     return role_required('ADMIN', 'TEACHER')(f)
 

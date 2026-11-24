@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block header_title %}Assignment — {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <span class="badge badge-secondary">{{ assignment.course_code }} (Sec {{ assignment.section_name }})</span>
+      <h2 style="margin: 0.35rem 0 0 0; font-size: 1.35rem;">{{ assignment.title }}</h2>
+      <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+        Instructor: {{ assignment.teacher_name }} &bull; Max Marks: <strong>{{ assignment.max_marks }}</strong> &bull; Weightage: {{ assignment.weightage_pct }}%
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-size: 0.82rem; color: var(--text-muted);">Due Date:</div>
+      <code style="font-size: 0.95rem; font-weight: 700;">{{ assignment.due_date }}</code>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+  <!-- Assignment Specification Body -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" style="margin: 0; font-size: 1rem;">Task Instructions &amp; Deliverables</h3>
+    </div>
+    <div class="card-body" style="line-height: 1.6; font-size: 0.92rem; white-space: pre-wrap;">
+{{ assignment.description }}
+    </div>
+  </div>
+
+  <!-- Student Submission Form or Evaluation Status -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" style="margin: 0; font-size: 1rem;">Your Submission</h3>
+    </div>
+    <div class="card-body">
+      {% if submission %}
+        <div style="margin-bottom: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Status:</div>
+          <span class="badge badge-{{ 'success' if submission.status == 'EVALUATED' else 'info' }}">
+            {{ submission.status }}
+          </span>
+          <small class="text-muted" style="display: block; margin-top: 0.3rem;">Submitted: {{ submission.submitted_at }}</small>
+        </div>
+
+        {% if submission.marks_obtained is not none %}
+        <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+          <div style="font-size: 0.8rem; color: #10b981; font-weight: 600;">Awarded Grade:</div>
+          <div style="font-size: 1.35rem; font-weight: 700; color: #10b981;">
+            {{ submission.marks_obtained }} / {{ assignment.max_marks }}
+          </div>
+          {% if submission.feedback %}
+          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-main);">
+            <strong>Feedback:</strong> {{ submission.feedback }}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.8rem; color: var(--text-muted);">Submitted Solution Text:</label>
+          <div style="background: var(--bg-hover); padding: 0.6rem; border-radius: var(--radius-sm); font-size: 0.85rem; max-height: 150px; overflow-y: auto;">
+            {{ submission.submission_text or '—' }}
+          </div>
+        </div>
+
+        {% if submission.file_path %}
+        <div style="font-size: 0.82rem; margin-bottom: 1rem;">
+          <strong>Attached File:</strong> <code>{{ submission.file_path }}</code>
+        </div>
+        {% endif %}
+      {% endif %}
+
+      {% if current_user.is_student %}
+        {% if enrollment %}
+          <form method="POST" action="{{ url_for('assignments.submit', assignment_id=assignment.assignment_id) }}" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+            <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
+              {% if submission %}Resubmit Solution{% else %}Submit Solution{% endif %}
+            </h4>
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <label class="form-label">Solution Text / SQL Code / Answers</label>
+              <textarea name="submission_text" rows="4" class="form-control" placeholder="Paste your queries or response here..." required>{{ submission.submission_text if submission else '' }}</textarea>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label class="form-label">Solution File Path (Optional)</label>
+              <input type="text" name="file_path" value="{{ submission.file_path if submission else '' }}" placeholder="/uploads/solutions/my_lab.pdf" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
+              {% if submission %}Update Submission{% else %}Submit Coursework{% endif %}
+            </button>
+          </form>
+        {% else %}
+          <div class="alert alert-warning" style="font-size: 0.85rem; margin: 0;">
+            You are not enrolled in Section {{ assignment.section_name }} of this course.
+          </div>
+        {% endif %}
+      {% endif %}
+
+      {% if current_user.is_teacher or current_user.is_admin %}
+      <div style="margin-top: 1rem;">
+        <a href="{{ url_for('assignments.submissions', assignment_id=assignment.assignment_id) }}" class="btn btn-primary btn-sm" style="width: 100%;">
+          View All Submissions &rarr;
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

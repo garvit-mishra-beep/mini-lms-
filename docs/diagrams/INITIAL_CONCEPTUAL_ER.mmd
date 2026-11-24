@@ -1,0 +1,103 @@
+%% Initial Conceptual ER Diagram (Draft Baseline)
+%% MiniLMS - ITM University CSL0311 DBMS PBL
+%% Shows early architectural draft before peer review audit
+
+erDiagram
+    USER {
+        int user_id PK
+        string full_name
+        string email UK
+        string password_hash
+        string role
+        string status
+    }
+
+    STUDENT {
+        int student_id PK
+        int user_id FK
+        string roll_no UK
+        string enrollment_no UK
+    }
+
+    TEACHER {
+        int teacher_id PK
+        int user_id FK
+        string employee_code UK
+    }
+
+    COURSE {
+        int course_id PK
+        string course_code UK
+        string title
+        string status
+    }
+
+    COURSE_INSTRUCTOR {
+        int course_id PK,FK
+        int teacher_id PK,FK
+        string instructor_role
+    }
+
+    MODULE {
+        int module_id PK
+        int course_id FK
+        string title
+        int sequence_no
+    }
+
+    LESSON {
+        int lesson_id PK
+        int module_id FK
+        string title
+        int sequence_no
+    }
+
+    ENROLLMENT {
+        int enrollment_id PK
+        int student_id FK
+        int course_id FK
+        string status
+    }
+
+    QUIZ {
+        int quiz_id PK
+        int lesson_id FK
+        string title
+        decimal max_score
+        int allowed_attempts
+    }
+
+    ATTEMPT {
+        int attempt_id PK
+        int quiz_id FK
+        int enrollment_id FK
+        int attempt_no
+        decimal score
+        string status
+    }
+
+    GRADE {
+        int grade_id PK
+        int enrollment_id FK,UK
+        decimal final_score
+        string letter_grade
+        boolean published
+    }
+
+    CERTIFICATE {
+        int certificate_id PK
+        int enrollment_id FK,UK
+        string certificate_code UK
+    }
+
+    USER ||--o| STUDENT : "specializes"
+    USER ||--o| TEACHER : "specializes"
+    TEACHER }|--|{ COURSE : "instructs (COURSE_INSTRUCTOR)"
+    STUDENT }|--|{ COURSE : "enrolls (ENROLLMENT)"
+    COURSE ||--o{ MODULE : "contains"
+    MODULE ||--|{ LESSON : "contains"
+    LESSON ||--o| QUIZ : "assesses"
+    QUIZ ||--o{ ATTEMPT : "attempted"
+    ENROLLMENT ||--o{ ATTEMPT : "submits"
+    ENROLLMENT ||--o| GRADE : "receives"
+    ENROLLMENT ||--o| CERTIFICATE : "awarded"

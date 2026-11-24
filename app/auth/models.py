@@ -14,6 +14,8 @@ class User(UserMixin):
         self.status = user_dict['status']
         self.student_id = user_dict.get('student_id')
         self.teacher_id = user_dict.get('teacher_id')
+        self.department_id = user_dict.get('department_id')
+        self.phone = user_dict.get('phone')
 
     @property
     def is_active(self):
@@ -22,6 +24,10 @@ class User(UserMixin):
     @property
     def is_admin(self):
         return self.role == 'ADMIN'
+
+    @property
+    def is_coordinator(self):
+        return self.role == 'COORDINATOR'
 
     @property
     def is_teacher(self):
@@ -39,7 +45,7 @@ class User(UserMixin):
     @classmethod
     def get_by_id(cls, user_id):
         row = fetch_one("""
-            SELECT u.user_id, u.full_name, u.email, u.password_hash, u.role, u.status,
+            SELECT u.user_id, u.full_name, u.email, u.password_hash, u.role, u.status, u.department_id, u.phone,
                    s.student_id, t.teacher_id
             FROM users u
             LEFT JOIN students s ON s.user_id = u.user_id
@@ -51,7 +57,7 @@ class User(UserMixin):
     @classmethod
     def get_by_email(cls, email):
         row = fetch_one("""
-            SELECT u.user_id, u.full_name, u.email, u.password_hash, u.role, u.status,
+            SELECT u.user_id, u.full_name, u.email, u.password_hash, u.role, u.status, u.department_id, u.phone,
                    s.student_id, t.teacher_id
             FROM users u
             LEFT JOIN students s ON s.user_id = u.user_id

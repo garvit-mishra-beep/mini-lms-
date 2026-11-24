@@ -1,47 +1,107 @@
-# Environment and credentials
-.env
-.env.*
-!.env.example
-
-# Database backups and dumps containing real/sensitive data
-database/backup/
-*.sql.bak
-*.dump
-backup/
-
-# Python artifacts
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-venv/
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
 .venv/
+venv/
+env/
 ENV/
 
-# Testing and coverage
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Private academic and development artifacts
+/_internal/
+/REPORT_HANDOFF/
+/MiniLMS_Final_Submission/
+/submission/
+/ai-log/
+
+# Previous stage documentation
+/docs/stage-*/
+/docs/stage[0-9]*/
+/docs/audit/
+/docs/final/
+/docs/requirements/
+/docs/data/
+/docs/design/
+
+# Private automated tests and generated evidence
+/tests/
+conftest.py
+pytest.ini
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
-tests/.cache/
+coverage.xml
+.tox/
+.nox/
+test-results/
+test-reports/
 
-# Archives and build artifacts
+# Benchmark output
+/benchmarks/results/
+/benchmarks/execution-plans/
+/benchmarks/logs/
+
+# Database backups and generated dumps
+/database/backup/
+/database/backups/
+/database/dumps/
+*.sql.gz
+*.dump
+*.bak
+
+# Uploaded files
+/uploads/
+/instance/
+/app/uploads/
+!/app/uploads/.gitkeep
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Submission archives
 *.zip
-*.tar.gz
 *.rar
+*.7z
 
-# IDE and Editor files
+# IDE configuration
 .vscode/
 .idea/
-*.sublime-project
-*.sublime-workspace
-*.swp
-*.swo
+*.suo
+*.user
 
-# System and logs
-*.log
-.system_generated/
+# AI coding tools
+.antigravity/
+.cursor/
+.claude/
+.codex/
+
+# Operating system files
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/

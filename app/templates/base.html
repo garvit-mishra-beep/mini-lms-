@@ -61,6 +61,26 @@
           <span>Certificates</span>
         </a>
 
+        <div class="nav-section-title">Academic Operations</div>
+        {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_coordinator) %}
+        <a href="{{ url_for('coordinator.index') }}" class="nav-item {% if active.startswith('coordinator') %}active{% endif %}">
+          <span class="nav-icon">🏛️</span>
+          <span>Coordination</span>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('attendance.index') }}" class="nav-item {% if active == 'attendance' %}active{% endif %}">
+          <span class="nav-icon">📅</span>
+          <span>Attendance</span>
+        </a>
+        <a href="{{ url_for('assignments.index') }}" class="nav-item {% if active == 'assignments' %}active{% endif %}">
+          <span class="nav-icon">📝</span>
+          <span>Coursework</span>
+        </a>
+        <a href="{{ url_for('announcements.index') }}" class="nav-item {% if active == 'announcements' %}active{% endif %}">
+          <span class="nav-icon">📢</span>
+          <span>Announcements</span>
+        </a>
+
         <div class="nav-section-title">DBMS Viva & Insights</div>
         <a href="{{ url_for('analytics.index') }}" class="nav-item {% if active == 'analytics' %}active{% endif %}">
           <span class="nav-icon">📈</span>
@@ -89,7 +109,7 @@
             </div>
             <div class="user-info">
               <div class="user-name" title="{{ current_user.full_name }}">{{ current_user.full_name }}</div>
-              <span class="user-role-tag badge badge-{{ 'primary' if current_user.is_admin else ('info' if current_user.is_teacher else 'success') }}">
+              <span class="user-role-tag badge badge-{{ 'primary' if current_user.is_admin else ('warning' if current_user.is_coordinator else ('info' if current_user.is_teacher else 'success')) }}">
                 {{ current_user.role }}
               </span>
             </div>
@@ -122,6 +142,9 @@
             <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">DEMO ROLE:</span>
             <a href="{{ url_for('auth.demo_login', role='admin') }}" class="role-switcher-btn" title="Switch to Admin">
               👑 Admin
+            </a>
+            <a href="{{ url_for('auth.demo_login', role='coordinator') }}" class="role-switcher-btn" title="Switch to Coordinator">
+              🏛️ Coord
             </a>
             <a href="{{ url_for('auth.demo_login', role='teacher') }}" class="role-switcher-btn" title="Switch to Teacher">
               👩‍🏫 Teacher

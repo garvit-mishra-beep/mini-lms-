@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block header_title %}Student Academic Standing{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">👨‍🎓 Comprehensive Student Academic Summary</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Real-time SQL analytical view <code>v_student_academic_summary</code> aggregating CGPA, enrollment completion, and cumulative attendance.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Enrollment No</th>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Semester</th>
+            <th>CGPA</th>
+            <th>Enrolled Courses</th>
+            <th>Completed</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td><code>{{ s.roll_no }}</code></td>
+            <td><small class="text-muted">{{ s.enrollment_no }}</small></td>
+            <td><strong>{{ s.full_name }}</strong></td>
+            <td><small>{{ s.email }}</small></td>
+            <td><span class="badge badge-secondary">{{ s.department_code or 'CSE' }}</span></td>
+            <td>Sem {{ s.current_semester }}</td>
+            <td><strong style="color: var(--primary);">{{ s.cgpa or '0.00' }}</strong></td>
+            <td>{{ s.total_enrolled_courses }}</td>
+            <td><span class="badge badge-success">{{ s.completed_courses }}</span></td>
+            <td>
+              <span class="badge badge-{{ 'error' if s.avg_attendance_pct < 75.0 else 'success' }}" style="font-weight: 600;">
+                {{ s.avg_attendance_pct }}%
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted" style="padding: 1.5rem;">No student academic records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

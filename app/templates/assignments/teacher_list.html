@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block header_title %}Faculty Coursework Assignments{% endblock %}
+
+{% block content %}
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h2 style="margin: 0; font-size: 1.25rem;">📝 Coursework &amp; Submissions Evaluation</h2>
+    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+      Publish coursework specifications, inspect student submissions, and award marks with stored procedure validation.
+    </p>
+  </div>
+  {% if offerings %}
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <select id="offering-selector" class="form-control" style="width: auto; font-size: 0.85rem;">
+      {% for o in offerings %}
+      <option value="{{ o.offering_id }}">{{ o.course_code }} (Sec {{ o.section_name }})</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="goToCreate()">+ New Assignment</button>
+  </div>
+  <script>
+  function goToCreate() {
+    const offId = document.getElementById('offering-selector').value;
+    window.location.href = "{{ url_for('assignments.index') }}offering/" + offId + "/new";
+  }
+  </script>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Section</th>
+            <th>Title</th>
+            <th>Max Marks</th>
+            <th>Weightage</th>
+            <th>Due Date</th>
+            <th>Submissions</th>
+            <th>Evaluated</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+          <tr>
+            <td><strong>{{ a.course_code }}</strong></td>
+            <td><span class="badge badge-secondary">Sec {{ a.section_name }}</span></td>
+            <td><strong>{{ a.title }}</strong></td>
+            <td>{{ a.max_marks }}</td>
+            <td>{{ a.weightage_pct }}%</td>
+            <td><code>{{ a.due_date }}</code></td>
+            <td><span class="badge badge-primary">{{ a.submission_count }} Submitted</span></td>
+            <td><span class="badge badge-success">{{ a.evaluated_count }} Graded</span></td>
+            <td>
+              <a href="{{ url_for('assignments.submissions', assignment_id=a.assignment_id) }}" class="btn btn-secondary btn-sm">
+                Submissions ({{ a.submission_count }}) &rarr;
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted" style="padding: 2rem;">No assignments created yet. Select a course section above to publish one.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

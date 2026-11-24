@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block header_title %}Faculty Workload & Allocations{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">👩‍🏫 Teaching Faculty Workload Metrics</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Real-time SQL analytical view <code>v_faculty_workload</code> aggregating sections taught, total credits, and conducted lectures.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee Code</th>
+            <th>Faculty Member</th>
+            <th>Qualification</th>
+            <th>Department</th>
+            <th>Assigned Sections</th>
+            <th>Teaching Credits</th>
+            <th>Lectures Conducted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in workloads %}
+          <tr>
+            <td><code>{{ w.employee_code }}</code></td>
+            <td><strong>{{ w.full_name }}</strong></td>
+            <td>{{ w.qualification or 'Ph.D. / M.Tech' }}</td>
+            <td><span class="badge badge-secondary">{{ w.department_code or 'CSE' }}</span></td>
+            <td><span class="badge badge-primary">{{ w.total_assigned_sections }} Sections</span></td>
+            <td><strong>{{ w.total_teaching_credits or 0.0 }}</strong> Credits</td>
+            <td><span class="badge badge-info">{{ w.total_lectures_conducted }} Lectures</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center text-muted" style="padding: 1.5rem;">No faculty workload records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block header_title %}Institutional Attendance Directory{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.5rem;">
+  <h2 style="margin: 0; font-size: 1.25rem;">📅 Campus-Wide Course Offering Attendance</h2>
+  <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+    Review lecture conduction records and roll call compliance across all academic departments.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>Course</th>
+            <th>Dept</th>
+            <th>Section</th>
+            <th>Primary Instructor</th>
+            <th>Enrolled</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in offerings %}
+          <tr>
+            <td><code>{{ o.term_code }}</code></td>
+            <td><strong>{{ o.course_code }}</strong> — {{ o.course_title }}</td>
+            <td><span class="badge badge-secondary">{{ o.department_code }}</span></td>
+            <td><strong>Sec {{ o.section_name }}</strong></td>
+            <td>{{ o.instructor_name or 'Unassigned' }}</td>
+            <td>{{ o.enrolled_count }} / {{ o.max_capacity }}</td>
+            <td><span class="badge badge-{{ 'success' if o.offering_status == 'OPEN' else 'secondary' }}">{{ o.offering_status }}</span></td>
+            <td>
+              <a href="{{ url_for('attendance.offering_sessions', offering_id=o.offering_id) }}" class="btn btn-secondary btn-sm">
+                Session Logs &rarr;
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted" style="padding: 1.5rem;">No course offerings found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

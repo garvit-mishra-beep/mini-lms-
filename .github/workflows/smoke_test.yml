@@ -1,0 +1,46 @@
+name: MiniLMS Public CI Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke-test:
+    name: Code Quality & Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt flake8
+
+    - name: Python Syntax & Compilation Verification
+      run: |
+        python -m compileall app scripts run.py wsgi.py run_production.py
+
+    - name: Lint Code with Flake8
+      run: |
+        # Stop build if there are Python syntax errors or undefined names
+        flake8 app scripts --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Verify Application Factory & Blueprint Imports
+      run: |
+        python -c "
+        import os
+        os.environ['SECRET_KEY'] = 'test-secret-key-12345'
+        from app import create_app
+        from app.config import Config
+        print('Application factory imported successfully.')
+        "

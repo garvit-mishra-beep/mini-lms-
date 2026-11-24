@@ -41,7 +41,12 @@ def create_app(config_class=Config):
         analytics_bp,
         audit_bp,
         explorer_bp,
-        settings_bp
+        settings_bp,
+        coordinator_bp,
+        attendance_bp,
+        assignments_bp,
+        announcements_bp,
+        intelligence_bp
     )
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -58,6 +63,11 @@ def create_app(config_class=Config):
     app.register_blueprint(audit_bp, url_prefix='/audit')
     app.register_blueprint(explorer_bp, url_prefix='/explorer')
     app.register_blueprint(settings_bp, url_prefix='/settings')
+    app.register_blueprint(coordinator_bp, url_prefix='/coordinator')
+    app.register_blueprint(attendance_bp, url_prefix='/attendance')
+    app.register_blueprint(assignments_bp, url_prefix='/assignments')
+    app.register_blueprint(announcements_bp, url_prefix='/announcements')
+    app.register_blueprint(intelligence_bp, url_prefix='/intelligence')
 
     # Backward compatibility redirect for old /enroll route
     @app.route('/enroll', methods=['GET', 'POST'])

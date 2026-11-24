@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block header_title %}Academic Coordination Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="welcome-banner" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%); border-left: 4px solid var(--primary); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; border-radius: var(--radius-md);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h2 style="margin: 0; font-size: 1.35rem; color: var(--text-main);">🏛️ Academic Coordination & Institutional Analytics</h2>
+        <p style="margin: 0.35rem 0 0 0; color: var(--text-muted); font-size: 0.88rem;">
+          Cross-departmental curriculum oversight, section utilization metrics, faculty workloads, and early attendance intervention.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;">
+        <a href="{{ url_for('coordinator.offerings') }}" class="btn btn-primary btn-sm">Manage Offerings</a>
+        <a href="{{ url_for('coordinator.faculty_workload') }}" class="btn btn-secondary btn-sm">Faculty Workload</a>
+        <a href="{{ url_for('coordinator.students_overview') }}" class="btn btn-secondary btn-sm">Student Standing</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Institutional KPI Cards -->
+  <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">🏢</div>
+      <div class="stat-details">
+        <div class="stat-value">{{ total_departments }}</div>
+        <div class="stat-label">Academic Depts</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">📚</div>
+      <div class="stat-details">
+        <div class="stat-value">{{ total_offerings }}</div>
+        <div class="stat-label">Course Sections</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">👩‍🏫</div>
+      <div class="stat-details">
+        <div class="stat-value">{{ total_faculty }}</div>
+        <div class="stat-label">Teaching Faculty</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">👨‍🎓</div>
+      <div class="stat-details">
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-label">Active Students</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">⚠️</div>
+      <div class="stat-details">
+        <div class="stat-value">{{ attendance_warnings_count }}</div>
+        <div class="stat-label">Low Attendance (&lt;75%)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Department Performance Benchmark View (v_department_performance) -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0; font-size: 1rem;">Department Performance Benchmarks (SQL View)</h3>
+        <span class="badge badge-info" style="font-size: 0.72rem;">v_department_performance</span>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Department Name</th>
+                <th>Students</th>
+                <th>Avg CGPA</th>
+                <th>Courses</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in dept_performance %}
+              <tr>
+                <td><strong>{{ d.department_code }}</strong></td>
+                <td>{{ d.department_name }}</td>
+                <td><span class="badge badge-secondary">{{ d.total_students }}</span></td>
+                <td><strong style="color: var(--primary);">{{ d.dept_avg_cgpa or '—' }}</strong> / 10.0</td>
+                <td>{{ d.total_courses_offered }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" class="text-center text-muted">No department records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Early Intervention Alerts -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0; font-size: 1rem; color: #ef4444;">🚨 Attendance Deficit Warnings (&lt; 75%)</h3>
+        <span class="badge badge-error" style="font-size: 0.72rem;">University Policy</span>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Roll No</th>
+                <th>Student</th>
+                <th>Dept</th>
+                <th>Attendance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in attendance_warnings %}
+              <tr>
+                <td><code>{{ s.roll_no }}</code></td>
+                <td>{{ s.full_name }}</td>
+                <td>{{ s.department_code or 'CSE' }}</td>
+                <td>
+                  <span class="badge badge-error" style="font-weight: 600;">
+                    {{ s.avg_attendance_pct }}%
+                  </span>
+                </td>
+                <td><span class="badge badge-warning">At Risk</span></td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">✅ All students currently meet the 75% attendance threshold!</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course Offerings Summary (v_course_offering_summary) -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0; font-size: 1rem;">Active Course Offerings & Section Capacity Utilization</h3>
+      <span class="badge badge-info" style="font-size: 0.72rem;">v_course_offering_summary</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Term</th>
+              <th>Course</th>
+              <th>Section</th>
+              <th>Primary Instructor</th>
+              <th>Enrolled / Cap</th>
+              <th>Utilization</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in offering_summary %}
+            <tr>
+              <td><code>{{ o.term_code }}</code></td>
+              <td><strong>{{ o.course_code }}</strong> — {{ o.course_title }}</td>
+              <td><span class="badge badge-secondary">Sec {{ o.section_name }}</span></td>
+              <td>{{ o.primary_instructor_name or 'Unassigned' }}</td>
+              <td>{{ o.enrolled_count }} / {{ o.max_capacity }}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <div style="flex: 1; background: var(--border-color); height: 6px; border-radius: 3px; overflow: hidden; min-width: 60px;">
+                    <div style="background: {% if o.capacity_utilization_pct > 90 %}#ef4444{% elif o.capacity_utilization_pct > 70 %}#f59e0b{% else %}#10b981{% endif %}; height: 100%; width: {{ [o.capacity_utilization_pct, 100]|min }}%;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; font-weight: 600;">{{ o.capacity_utilization_pct }}%</span>
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-{{ 'success' if o.offering_status == 'OPEN' else ('secondary' if o.offering_status == 'COMPLETED' else 'warning') }}">
+                  {{ o.offering_status }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted">No offerings scheduled.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
