@@ -28,12 +28,12 @@ jobs:
 
     - name: Python Syntax & Compilation Verification
       run: |
-        python -m compileall app scripts run.py wsgi.py run_production.py
+        python -m compileall app database run.py wsgi.py
 
     - name: Lint Code with Flake8
       run: |
         # Stop build if there are Python syntax errors or undefined names
-        flake8 app scripts --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app database run.py wsgi.py --count --select=E9,F63,F7,F82 --show-source --statistics
 
     - name: Verify Application Factory & Blueprint Imports
       run: |
